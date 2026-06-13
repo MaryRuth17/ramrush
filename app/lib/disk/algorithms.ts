@@ -52,8 +52,21 @@ export function computeDiskOrder(
   const greater = reqs.filter(r => r >= headStart).sort((a, b) => a - b);
   const lesser = reqs.filter(r => r < headStart).sort((a, b) => a - b);
 
-  if (algorithm === 'cscan') return [...greater, ...lesser];
-  // SCAN and LOOK: reverse at the end
+  if (algorithm === 'cscan') {
+    // Sweep to disk end (199), jump to 0, then sweep up — boundary travel counts as movement
+    const withBoundary = greater[greater.length - 1] === DISK_MAX_TRACK
+      ? greater
+      : [...greater, DISK_MAX_TRACK];
+    return [...withBoundary, 0, ...lesser];
+  }
+  if (algorithm === 'scan') {
+    // Travel to physical disk end before reversing (LOOK stops at last request instead)
+    const withBoundary = greater[greater.length - 1] === DISK_MAX_TRACK
+      ? greater
+      : [...greater, DISK_MAX_TRACK];
+    return [...withBoundary, ...lesser.slice().reverse()];
+  }
+  // LOOK: reverse at the last pending request, no boundary travel
   return [...greater, ...lesser.slice().reverse()];
 }
 

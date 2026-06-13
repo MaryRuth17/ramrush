@@ -61,6 +61,11 @@ export default function CpuPage() {
   const [flashRight, setFlashRight] = useState<string | null>(null);
   const [flashWrong, setFlashWrong] = useState<string | null>(null);
 
+  // RR-specific play state: remaining burst per process, ordered ready queue, and admission tracker
+  const [rrRemaining, setRrRemaining] = useState<Record<string, number>>({});
+  const [rrQueue, setRrQueue] = useState<string[]>([]);
+  const [rrAdded, setRrAdded] = useState<Set<string>>(new Set());
+
   const activeProcesses = useCallback(() => {
     return customProcesses.length > 0 && useCustom ? customProcesses : DEFAULT_PROCESSES_COPY;
   }, [customProcesses, useCustom]);
@@ -142,18 +147,84 @@ export default function CpuPage() {
     const procs = activeProcesses();
     setPlayProcesses(procs);
     setCompletedNames([]);
-    setCurrentTime(0);
     setHearts(MAX_HEARTS);
     setScore(0);
     setPlayDone(false);
     setTimerKey(k => k + 1);
     setTimerRunning(true);
     setPlayMessage('Click the process that should run next!');
+
+    if (algo === 'rr') {
+      // Mirror the reference engine's state: remaining burst, FIFO queue, admission set
+      const rem: Record<string, number> = {};
+      procs.forEach(p => { rem[p.name] = p.burst; });
+      const added = new Set<string>();
+      // If nothing arrives at time 0, auto-advance to first arrival (idle time)
+      const initTime = procs.some(p => p.arrival <= 0) ? 0 : Math.min(...procs.map(p => p.arrival));
+      const initQueue = procs
+        .filter(p => p.arrival <= initTime)
+        .sort((a, b) => a.arrival - b.arrival)
+        .map(p => p.name);
+      initQueue.forEach(n => added.add(n));
+      setRrRemaining(rem);
+      setRrQueue(initQueue);
+      setRrAdded(added);
+      setCurrentTime(initTime);
+    } else {
+      setRrRemaining({});
+      setRrQueue([]);
+      setRrAdded(new Set());
+      setCurrentTime(0);
+    }
+
     setScreen('play');
   }
 
   function getCorrectAnswer(time: number, done: string[]): string | null {
+    if (algorithm === 'rr') return rrQueue[0] ?? null;
     return getNextCpuProcess(algorithm, playProcesses, done, time, quantum);
+  }
+
+  // Mirrors computeCpuGantt's queue advancement: deduct quantum, re-queue partial, admit arrivals, handle idle.
+  function advanceRrState(name: string, time: number): {
+    nextTime: number;
+    newRemaining: Record<string, number>;
+    newQueue: string[];
+    newAdded: Set<string>;
+    newDone: string[];
+    allDone: boolean;
+  } {
+    const rem = rrRemaining[name];
+    const runTime = Math.min(quantum, rem);
+    const newRem = rem - runTime;
+    let nextTime = time + runTime;
+
+    const newRemaining = { ...rrRemaining, [name]: newRem };
+    const newAdded = new Set(rrAdded);
+
+    // Remove the head process, then admit newly arrived processes (arrival order), then re-queue if partial
+    let newQueue = rrQueue.slice(1);
+    playProcesses
+      .filter(p => p.arrival > time && p.arrival <= nextTime && !newAdded.has(p.name))
+      .sort((a, b) => a.arrival - b.arrival)
+      .forEach(p => { newQueue.push(p.name); newAdded.add(p.name); });
+    if (newRem > 0) newQueue.push(name);
+
+    // Auto-advance past idle time when queue empties but unadmitted processes remain
+    if (newQueue.length === 0) {
+      const notYetArrived = playProcesses.filter(p => !newAdded.has(p.name) && newRemaining[p.name] > 0);
+      if (notYetArrived.length > 0) {
+        nextTime = Math.min(...notYetArrived.map(p => p.arrival));
+        notYetArrived
+          .filter(p => p.arrival <= nextTime)
+          .sort((a, b) => a.arrival - b.arrival)
+          .forEach(p => { newQueue.push(p.name); newAdded.add(p.name); });
+      }
+    }
+
+    const newDone = playProcesses.filter(p => newRemaining[p.name] === 0).map(p => p.name);
+    const allDone = Object.values(newRemaining).every(r => r === 0);
+    return { nextTime, newRemaining, newQueue, newAdded, newDone, allDone };
   }
 
   function handleProcessClick(name: string, time: number, done: string[]) {
@@ -163,30 +234,43 @@ export default function CpuPage() {
     setTimerRunning(false);
 
     if (name === correct) {
-      // Find burst time to advance clock
-      const p = playProcesses.find(x => x.name === name)!;
-      const nextTime = time + (algorithm === 'rr' ? Math.min(quantum, p.burst) : p.burst);
-      const nextDone = [...done, name];
       setFlashRight(name);
       setTimeout(() => setFlashRight(null), 500);
       setScore(s => s + 10);
-      setCompletedNames(nextDone);
-      setCurrentTime(nextTime);
-      setPlayMessage(`✓ Correct! ${name} runs next under ${getCpuAlgoLabel(algorithm)}.`);
 
-      // Check if all done
-      const remaining = playProcesses.filter(p => !nextDone.includes(p.name) && p.arrival <= nextTime);
-      if (nextDone.length >= playProcesses.length || remaining.length === 0) {
-        setPlayDone(true);
-        setTimerRunning(false);
-        setPlayMessage('All processes scheduled! Run complete.');
-        savePlaySession(score + 10, hearts);
+      if (algorithm === 'rr') {
+        const runTime = Math.min(quantum, rrRemaining[name]);
+        const { nextTime, newRemaining, newQueue, newAdded, newDone, allDone } = advanceRrState(name, time);
+        setRrRemaining(newRemaining);
+        setRrQueue(newQueue);
+        setRrAdded(newAdded);
+        setCurrentTime(nextTime);
+        setCompletedNames(newDone);
+        setPlayMessage(`✓ Correct! ${name} runs for ${runTime} unit(s) under Round Robin.`);
+        if (allDone) {
+          setPlayDone(true);
+          setTimerRunning(false);
+          setPlayMessage('All processes scheduled! Run complete.');
+          savePlaySession(score + 10, hearts);
+        } else {
+          setTimeout(() => { setTimerKey(k => k + 1); setTimerRunning(true); setPlayMessage('Click the process that should run next!'); }, 700);
+        }
       } else {
-        setTimeout(() => {
-          setTimerKey(k => k + 1);
-          setTimerRunning(true);
-          setPlayMessage('Click the process that should run next!');
-        }, 700);
+        const p = playProcesses.find(x => x.name === name)!;
+        const nextTime = time + p.burst;
+        const nextDone = [...done, name];
+        setCompletedNames(nextDone);
+        setCurrentTime(nextTime);
+        setPlayMessage(`✓ Correct! ${name} runs next under ${getCpuAlgoLabel(algorithm)}.`);
+        const remaining = playProcesses.filter(p => !nextDone.includes(p.name) && p.arrival <= nextTime);
+        if (nextDone.length >= playProcesses.length || remaining.length === 0) {
+          setPlayDone(true);
+          setTimerRunning(false);
+          setPlayMessage('All processes scheduled! Run complete.');
+          savePlaySession(score + 10, hearts);
+        } else {
+          setTimeout(() => { setTimerKey(k => k + 1); setTimerRunning(true); setPlayMessage('Click the process that should run next!'); }, 700);
+        }
       }
     } else {
       setFlashWrong(name);
@@ -201,10 +285,7 @@ export default function CpuPage() {
         setPlayMessage('GAME OVER! No hearts remaining.');
         savePlaySession(Math.max(0, score - 5), 0);
       } else {
-        setTimeout(() => {
-          setTimerKey(k => k + 1);
-          setTimerRunning(true);
-        }, 700);
+        setTimeout(() => { setTimerKey(k => k + 1); setTimerRunning(true); }, 700);
       }
     }
   }
@@ -213,13 +294,35 @@ export default function CpuPage() {
     const newHearts = hearts - 1;
     setHearts(newHearts);
     setScore(s => Math.max(0, s - 5));
-    // Skip current arrived process
+
+    if (algorithm === 'rr') {
+      const head = rrQueue[0];
+      if (head) {
+        const { nextTime, newRemaining, newQueue, newAdded, newDone, allDone } = advanceRrState(head, time);
+        setRrRemaining(newRemaining);
+        setRrQueue(newQueue);
+        setRrAdded(newAdded);
+        setCurrentTime(nextTime);
+        setCompletedNames(newDone);
+        setPlayMessage(`TIME OUT! ${head} was skipped. -1 heart.`);
+        if (allDone || newHearts <= 0) {
+          setPlayDone(true);
+          setPlayMessage(allDone ? 'All processes scheduled! Run complete.' : 'GAME OVER! No hearts remaining.');
+          savePlaySession(Math.max(0, score - 5), newHearts <= 0 ? 0 : newHearts);
+          return;
+        }
+      }
+      setTimeout(() => { setTimerKey(k => k + 1); setTimerRunning(true); }, 800);
+      return;
+    }
+
+    // Non-RR timeout: auto-advance the correct non-preemptive process
     const arrived = playProcesses.filter(p => !done.includes(p.name) && p.arrival <= time);
     if (arrived.length > 0) {
       const correct = getCorrectAnswer(time, done) ?? arrived[0].name;
       const p = playProcesses.find(x => x.name === correct)!;
       const nextDone = [...done, correct];
-      const nextTime = time + (algorithm === 'rr' ? Math.min(quantum, p.burst) : p.burst);
+      const nextTime = time + p.burst;
       setCompletedNames(nextDone);
       setCurrentTime(nextTime);
       setPlayMessage(`TIME OUT! ${correct} was skipped. -1 heart.`);
@@ -229,10 +332,7 @@ export default function CpuPage() {
       setPlayMessage('GAME OVER! No hearts remaining.');
       savePlaySession(Math.max(0, score - 5), 0);
     } else {
-      setTimeout(() => {
-        setTimerKey(k => k + 1);
-        setTimerRunning(true);
-      }, 800);
+      setTimeout(() => { setTimerKey(k => k + 1); setTimerRunning(true); }, 800);
     }
   }
 
@@ -311,6 +411,8 @@ export default function CpuPage() {
         correctAnswer={correct}
         flashRight={flashRight}
         flashWrong={flashWrong}
+        rrRemaining={algorithm === 'rr' ? rrRemaining : undefined}
+        rrQueue={algorithm === 'rr' ? rrQueue : undefined}
         onProcessClick={(name) => handleProcessClick(name, currentTime, completedNames)}
         onTimeout={() => handleTimeout(currentTime, completedNames)}
         onRestart={() => startPlay(algorithm)}
@@ -606,12 +708,15 @@ function SimulationScreen({
 function PlayScreen({
   algorithm, processes, arrivedProcesses, completedNames, currentTime, hearts, score,
   playMessage, playDone, timerKey, timerRunning, correctAnswer, flashRight, flashWrong,
+  rrRemaining, rrQueue,
   onProcessClick, onTimeout, onRestart, onExit,
 }: {
   algorithm: CpuAlgorithm; processes: CpuProcess[]; arrivedProcesses: CpuProcess[];
   completedNames: string[]; currentTime: number; hearts: number; score: number;
   playMessage: string; playDone: boolean; timerKey: number; timerRunning: boolean;
   correctAnswer: string | null; flashRight: string | null; flashWrong: string | null;
+  rrRemaining?: Record<string, number>;
+  rrQueue?: string[];
   onProcessClick: (name: string) => void; onTimeout: () => void;
   onRestart: () => void; onExit: () => void;
 }) {
@@ -664,12 +769,26 @@ function PlayScreen({
             <h2 style={{ color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12, fontSize: 14 }}>
               ALL PROCESSES
             </h2>
+
+            {/* RR queue order display */}
+            {rrQueue && rrQueue.length > 0 && (
+              <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', padding: '5px 10px', marginBottom: 10, fontSize: 11 }}>
+                <span style={{ color: 'var(--yellow)' }}>QUEUE: </span>
+                {rrQueue.map((n, i) => (
+                  <span key={i} style={{ color: i === 0 ? 'var(--cyan)' : 'var(--white)', marginRight: 8, fontFamily: 'var(--font-mono)' }}>
+                    {i === 0 ? `► ${n}` : n}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px,1fr))', gap: 10 }}>
               {processes.map(p => {
                 const isDone = completedNames.includes(p.name);
                 const isArrived = p.arrival <= currentTime && !isDone;
                 const isCorrect = p.name === flashRight;
                 const isWrong = p.name === flashWrong;
+                const displayBurst = rrRemaining ? (rrRemaining[p.name] ?? p.burst) : p.burst;
 
                 return (
                   <button
@@ -704,7 +823,9 @@ function PlayScreen({
                     className={isCorrect ? 'correct-flash' : isWrong ? 'wrong-flash' : ''}
                   >
                     <strong style={{ display: 'block', color: isDone ? '#666' : 'var(--yellow)', fontSize: 16 }}>{p.name}</strong>
-                    <span style={{ fontSize: 11, display: 'block' }}>Arr: {p.arrival} | Burst: {p.burst}</span>
+                    <span style={{ fontSize: 11, display: 'block' }}>
+                      Arr: {p.arrival} | {rrRemaining ? `Rem: ${displayBurst}` : `Burst: ${p.burst}`}
+                    </span>
                     <span style={{ fontSize: 11, display: 'block' }}>Pri: {p.priority}</span>
                     {isDone && <span style={{ fontSize: 10, color: 'var(--success)' }}>✓ DONE</span>}
                     {p.arrival > currentTime && <span style={{ fontSize: 10, color: '#7a8ab0' }}>arrives@{p.arrival}</span>}
