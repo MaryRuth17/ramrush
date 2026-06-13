@@ -60,6 +60,7 @@ export default function CpuPage() {
   const [playDone, setPlayDone] = useState(false);
   const [flashRight, setFlashRight] = useState<string | null>(null);
   const [flashWrong, setFlashWrong] = useState<string | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
 
   const activeProcesses = useCallback(() => {
     return customProcesses.length > 0 && useCustom ? customProcesses : DEFAULT_PROCESSES_COPY;
@@ -146,10 +147,17 @@ export default function CpuPage() {
     setHearts(MAX_HEARTS);
     setScore(0);
     setPlayDone(false);
+    setGameStarted(false);
     setTimerKey(k => k + 1);
+    setTimerRunning(false);
+    setPlayMessage('Press START GAME to begin!');
+    setScreen('play');
+  }
+
+  function handleStartGame() {
+    setGameStarted(true);
     setTimerRunning(true);
     setPlayMessage('Click the process that should run next!');
-    setScreen('play');
   }
 
   function getCorrectAnswer(time: number, done: string[]): string | null {
@@ -305,6 +313,8 @@ export default function CpuPage() {
         correctAnswer={correct}
         flashRight={flashRight}
         flashWrong={flashWrong}
+        gameStarted={gameStarted}
+        onStartGame={handleStartGame}
         onProcessClick={(name) => handleProcessClick(name, currentTime, completedNames)}
         onTimeout={() => handleTimeout(currentTime, completedNames)}
         onRestart={() => startPlay(algorithm)}
@@ -606,6 +616,7 @@ function PlayScreen({
   completedNames: string[]; currentTime: number; hearts: number; score: number;
   playMessage: string; playDone: boolean; timerKey: number; timerRunning: boolean;
   correctAnswer: string | null; flashRight: string | null; flashWrong: string | null;
+  gameStarted: boolean; onStartGame: () => void;
   onProcessClick: (name: string) => void; onTimeout: () => void;
   onRestart: () => void; onExit: () => void;
 }) {
@@ -669,8 +680,8 @@ function PlayScreen({
                   <button
                     key={p.name}
                     id={`cpu-play-${p.name}`}
-                    onClick={() => !playDone && isArrived && onProcessClick(p.name)}
-                    disabled={playDone || !isArrived}
+                    onClick={() => gameStarted && !playDone && isArrived && onProcessClick(p.name)}
+                    disabled={!gameStarted || playDone || !isArrived}
                     style={{
                       border: isDone
                         ? '2px solid #333'
@@ -717,6 +728,11 @@ function PlayScreen({
             <JustifiedText style={{ fontSize: 12, marginTop: 4 }}>{ruleText}</JustifiedText>
           </div>
           <div className="message-box" style={{ fontSize: 12 }}>{playMessage}</div>
+          
+          {!gameStarted && !playDone && (
+            <button className="btn btn-yellow" onClick={onStartGame}>START GAME</button>
+          )}
+
           {playDone && (
             <>
               <button id="cpuPlayRestart" className="btn" onClick={onRestart}>PLAY AGAIN</button>

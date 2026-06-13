@@ -70,6 +70,7 @@ export default function VmPage() {
   const [flashRight, setFlashRight] = useState(-1);
   const [flashWrong, setFlashWrong] = useState(-1);
   const [playLog, setPlayLog] = useState<('hit' | 'fault')[]>([]);
+  const [gameStarted, setGameStarted] = useState(false);
 
   /* ── SIMULATION ───────────────────────────────────────────── */
   function startSim(algo: VmAlgorithm) {
@@ -142,13 +143,19 @@ export default function VmPage() {
     setPlayDone(false);
     setNeedsChoice(false);
     setPlayLog([]);
+    setGameStarted(false);
     setTimerKey(k => k + 1);
+    setTimerRunning(false);
+    setPlayMessage('Press START GAME to begin!');
+    setScreen('play');
+  }
+
+  function handleStartGame() {
+    setGameStarted(true);
     setTimerRunning(true);
     setPlayMessage('Process the next page reference!');
-    setScreen('play');
-
     setTimeout(() => {
-      advancePlayStep(new Array(fc).fill(null), [], new Array(fc).fill(-1), 0, 0, 0, [], MAX_HEARTS, 0);
+      advancePlayStep(new Array(activeFrames()).fill(null), [], new Array(activeFrames()).fill(-1), 0, 0, 0, [], MAX_HEARTS, 0);
     }, 600);
   }
 
@@ -463,7 +470,7 @@ export default function VmPage() {
           </section>
 
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {!playDone && needsChoice && (
+            {!playDone && (
               <TimerBar key={timerKey} seconds={TIME_LIMIT} running={timerRunning} onExpire={handlePlayTimeout} />
             )}
             <div style={{ border: '2px solid var(--border)', padding: 12 }}>
@@ -516,6 +523,11 @@ export default function VmPage() {
               </JustifiedText>
             </div>
             <div className="message-box" style={{ fontSize: 12 }}>{playMessage}</div>
+            
+            {!gameStarted && !playDone && (
+              <button className="btn btn-yellow" onClick={handleStartGame}>START GAME</button>
+            )}
+
             {playDone && (
               <>
                 <button className="btn" onClick={() => startPlay(algorithm)}>PLAY AGAIN</button>

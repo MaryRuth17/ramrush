@@ -117,6 +117,7 @@ export default function MemoryPage() {
   const [playDone, setPlayDone] = useState(false);
   const [flashBlock, setFlashBlock] = useState<{ idx: number; type: 'right' | 'wrong' } | null>(null);
   const [currentProcess, setCurrentProcess] = useState<MemoryProcess | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
 
   const getActiveData = useCallback(() => {
     if (useCustom) return { blocks: cloneBlocks(customBlocks), processes: customProcesses };
@@ -210,10 +211,17 @@ export default function MemoryPage() {
     setScore(0);
     setPlayDone(false);
     setFlashBlock(null);
+    setGameStarted(false);
     setTimerKey(k => k + 1);
-    setTimerRunning(true);
-    setPlayMessage(`Allocate ${firstProc.name} (${firstProc.size} MB) using ${getAlgorithmLabel(algo)}.`);
+    setTimerRunning(false);
+    setPlayMessage('Press START GAME to begin!');
     setScreen('play');
+  }
+
+  function handleStartGame() {
+    setGameStarted(true);
+    setTimerRunning(true);
+    setPlayMessage(`Allocate ${currentProcess?.name} (${currentProcess?.size} MB) using ${getAlgorithmLabel(algorithm)}.`);
   }
 
   function handleBlockClick(
@@ -606,12 +614,12 @@ export default function MemoryPage() {
                       key={i}
                       id={`mem-block-${i}`}
                       className={`memory-block ${b.used ? 'used' : 'free'} ${isFlashRight ? 'correct-flash' : isFlashWrong ? 'wrong-flash' : ''}`}
-                      onClick={() => !b.used && currentProcess && !playDone && handleBlockClick(i, currentProcess, playBlocks, playQueue, hearts, score)}
-                      disabled={b.used || playDone || !currentProcess}
+                      disabled={!gameStarted || b.used || playDone || !currentProcess}
                       style={{
                         outline: isFlashRight ? '4px solid var(--success)' : isFlashWrong ? '4px solid var(--danger)' : undefined,
-                        cursor: b.used || playDone ? 'default' : 'pointer',
+                        cursor: (!gameStarted || b.used || playDone) ? 'default' : 'pointer',
                       }}
+                      onClick={() => gameStarted && !b.used && !playDone && handleBlockClick(i, currentProcess!, playBlocks, playQueue, hearts, score)}
                     >
                       <strong style={{ display: 'block', fontSize: 13 }}>BLOCK {i + 1}</strong>
                       <span style={{ display: 'block', marginTop: 4 }}>{b.size} MB</span>
@@ -646,6 +654,11 @@ export default function MemoryPage() {
               <JustifiedText style={{ fontSize: 12, marginTop: 4 }}>{getAlgorithmRule(algorithm)}</JustifiedText>
             </div>
             <div className="message-box" style={{ fontSize: 12 }}>{playMessage}</div>
+            
+            {!gameStarted && !playDone && (
+              <button className="btn btn-yellow" onClick={handleStartGame}>START GAME</button>
+            )}
+
             {playDone && (
               <>
                 <button id="memPlayRestart" className="btn" onClick={() => startPlay(algorithm)}>PLAY AGAIN</button>

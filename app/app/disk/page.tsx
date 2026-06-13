@@ -66,6 +66,7 @@ export default function DiskPage() {
   const [flashRight, setFlashRight] = useState(-1);
   const [flashWrong, setFlashWrong] = useState(-1);
   const [totalMoved, setTotalMoved] = useState(0);
+  const [gameStarted, setGameStarted] = useState(false);
 
   /* ── SIMULATION ───────────────────────────────────────────── */
   function startSim(algo: DiskAlgorithm) {
@@ -141,10 +142,17 @@ export default function DiskPage() {
     setScore(0);
     setPlayDone(false);
     setTotalMoved(0);
+    setGameStarted(false);
     setTimerKey(k => k + 1);
+    setTimerRunning(false);
+    setPlayMessage('Press START GAME to begin!');
+    setScreen('play');
+  }
+
+  function handleStartGame() {
+    setGameStarted(true);
     setTimerRunning(true);
     setPlayMessage(`Click the next track the head should visit!`);
-    setScreen('play');
   }
 
   function handleTrackClick(track: number, step: number, visited: number[], head: number, moved: number, h: number, s: number) {
@@ -457,10 +465,10 @@ export default function DiskPage() {
                       style={{
                         left: `${pct(t)}%`,
                         background: isRight ? 'var(--success)' : isWrong ? 'var(--danger)' : visited ? 'var(--success)' : 'var(--violet)',
-                        cursor: !playDone && !visited ? 'pointer' : 'default',
+                        cursor: gameStarted && !playDone && !visited ? 'pointer' : 'default',
                         width: 4,
                       }}
-                      onClick={() => !playDone && !visited && handleTrackClick(t, playStep, playVisited, playHead, totalMoved, hearts, score)}
+                      onClick={() => gameStarted && !playDone && !visited && handleTrackClick(t, playStep, playVisited, playHead, totalMoved, hearts, score)}
                     >
                       <span style={{ fontWeight: 'bold', color: t === nextCorrect && !playDone ? 'var(--yellow)' : 'var(--white)' }}>{t}</span>
                     </div>
@@ -492,6 +500,11 @@ export default function DiskPage() {
               </JustifiedText>
             </div>
             <div className="message-box" style={{ fontSize: 12 }}>{playMessage}</div>
+            
+            {!gameStarted && !playDone && (
+              <button className="btn btn-yellow" onClick={handleStartGame}>START GAME</button>
+            )}
+
             {playDone && (
               <>
                 <button className="btn" onClick={() => startPlay(algorithm)}>PLAY AGAIN</button>
