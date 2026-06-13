@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- =============================================================
+         RAM RUSH v11 — INDEX.HTML
+         This file controls the SCREEN STRUCTURE only.
+         Edit text labels, buttons, and screen sections here.
+    ============================================================== -->
+
+    <!-- [HTML-01] Basic browser setup -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAM Rush v11</title>
+
+    <!-- [HTML-02] Fonts. You can remove these if you want offline fonts only. -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <!-- [HTML-03] Main stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- =============================================================
+         [SCREEN-01] OPENING SCREEN
+         First screen the player sees.
+         Flow: Opening Screen -> START -> Mode Select Screen
+    ============================================================== -->
+    <section id="openingScreen" class="screen active-screen">
+        <div class="cyberdeck-shell">
+
+            <!-- [OPENING-01] Top hardware label -->
+            <div class="deck-topbar">
+                <span>CYBERDECK // RAM RUSH OS</span>
+                <span>v11.0</span>
+            </div>
+
+            <!-- [OPENING-02] CRT screen area -->
+            <div class="crt-screen">
+                <div class="scanline-layer"></div>
+
+                <!-- [OPENING-03] Boot text -->
+                <div class="boot-text">
+                    <p>&gt; SYSTEM BOOTING...</p>
+                    <p>&gt; MEMORY GRID ONLINE</p>
+                    <p>&gt; ALLOCATION MODULE READY</p>
+                    <p>&gt; TIMER MODULE ACTIVE</p>
+                    <p>&gt; COMPACTION PROTOCOL READY</p>
+                    <p class="ready-text">&gt; STATUS: READY</p>
+                </div>
+
+                <!-- [OPENING-04] Game title -->
+                <div class="title-area">
+                    <h1>RAM RUSH</h1>
+                    <p>MEMORY MANAGEMENT CHALLENGE</p>
+                </div>
+
+                <!-- [OPENING-05] Start button -->
+                <button id="startButton" class="large-button cyan-button">START</button>
+            </div>
+
+            <!-- [OPENING-06] Bottom fake hardware details -->
+            <div class="deck-bottom-panel">
+                <span class="indicator-light cyan-light"></span>
+                <span class="indicator-light pink-light"></span>
+                <span class="deck-slot"></span>
+                <span class="indicator-light yellow-light"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- =============================================================
+         [SCREEN-01B] TOPIC SELECT SCREEN
+         Player chooses which OS topic to practice.
+         Flow: Opening Screen -> START -> Topic Select Screen
+    ============================================================== -->
+    <section id="topicScreen" class="screen">
+        <div class="mode-wrapper">
+            <h1 class="screen-title">SELECT TOPIC</h1>
+
+            <div class="mode-card-grid">
+                <!-- [TOPIC-01] Memory Allocation (original RAM Rush game) -->
+                <button class="mode-card play-card topic-card" data-topic="memory">
+                    <span class="mode-icon">▦</span>
+                    <strong>MEMORY ALLOCATION</strong>
+                    <small>First Fit, Best Fit, Worst Fit</small>
+                </button>
+
+                <!-- [TOPIC-02] CPU Scheduling -->
+                <button class="mode-card simulation-card topic-card" data-topic="cpu">
+                    <span class="mode-icon">⏱</span>
+                    <strong>CPU SCHEDULING</strong>
+                    <small>FCFS, SJF, Priority, Round Robin</small>
+                </button>
+
+                <!-- [TOPIC-03] Virtual Memory / Page Replacement -->
+                <button class="mode-card play-card topic-card" data-topic="vm">
+                    <span class="mode-icon">▤</span>
+                    <strong>VIRTUAL MEMORY</strong>
+                    <small>FIFO, LRU, Optimal page replacement</small>
+                </button>
+
+                <!-- [TOPIC-04] Disk / Mass Storage Scheduling -->
+                <button class="mode-card simulation-card topic-card" data-topic="disk">
+                    <span class="mode-icon">◎</span>
+                    <strong>DISK SCHEDULING</strong>
+                    <small>FCFS, SSTF, SCAN, C-SCAN, LOOK</small>
+                </button>
+            </div>
+
+            <button id="topicBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+
+    <!-- =============================================================
+         [SCREEN-02] MODE SELECT SCREEN
+         Player chooses PLAY or SIMULATION.
+         (Memory Allocation topic only)
+    ============================================================== -->
+    <section id="modeScreen" class="screen">
+        <div class="mode-wrapper">
+            <h1 class="screen-title">SELECT MODE</h1>
+
+            <div class="mode-card-grid">
+                <!-- [MODE-01] Play mode card -->
+                <button id="openPlaySelectButton" class="mode-card play-card">
+                    <span class="mode-icon">▶</span>
+                    <strong>PLAY</strong>
+                    <small>Timed challenge with hearts</small>
+                </button>
+
+                <!-- [MODE-02] Simulation mode card -->
+                <button id="openSimSelectButton" class="mode-card simulation-card">
+                    <span class="mode-icon">⚙</span>
+                    <strong>SIMULATION</strong>
+                    <small>Automatic algorithm visualizer</small>
+                </button>
+            </div>
+
+            <button id="modeBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+
+    <!-- =============================================================
+         [SCREEN-03] ALGORITHM SELECT SCREEN
+         Used by both PLAY and SIMULATION.
+         The text changes depending on selected mode.
+    ============================================================== -->
+    <section id="algorithmScreen" class="screen">
+        <div class="algorithm-wrapper">
+            <h1 id="algorithmTitle" class="screen-title">CHOOSE ALGORITHM</h1>
+            <p id="algorithmSubtitle" class="screen-subtitle">Select an allocation algorithm.</p>
+
+            <div class="algorithm-card-grid">
+                <!-- [ALGO-01] First Fit button -->
+                <button class="algorithm-card" data-algorithm="firstFit">
+                    <strong>FIRST FIT</strong>
+                    <small>Choose the first free block large enough.</small>
+                </button>
+
+                <!-- [ALGO-02] Best Fit button -->
+                <button class="algorithm-card" data-algorithm="bestFit">
+                    <strong>BEST FIT</strong>
+                    <small>Choose the smallest valid free block.</small>
+                </button>
+
+                <!-- [ALGO-03] Worst Fit button -->
+                <button class="algorithm-card" data-algorithm="worstFit">
+                    <strong>WORST FIT</strong>
+                    <small>Choose the largest valid free block.</small>
+                </button>
+            </div>
+
+            <button id="algorithmBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+
+    <!-- =============================================================
+         [SCREEN-04] PLAY STAGE TYPE SCREEN
+         Appears ONLY after choosing a Play algorithm.
+         Required flow: START -> PLAY -> ALGORITHM -> STAGE TYPE.
+         Stage type controls starting memory size:
+         EASY = 1 GB, NORMAL = 2 GB, HARD = 3 GB.
+    ============================================================== -->
+    <section id="playStageTypeScreen" class="screen">
+        <div class="algorithm-wrapper">
+            <h1 class="screen-title">CHOOSE STAGE TYPE</h1>
+            <p id="playStageSetupSubtitle" class="screen-subtitle">Choose the memory size for this play stage.</p>
+
+            <div class="mode-card-grid">
+                <!-- [PLAY-STAGE-01] Easy stage: 1 GB memory -->
+                <button class="mode-card play-card stage-type-card" data-stage-type="easy">
+                    <span class="mode-icon">Ⅰ</span>
+                    <strong>EASY</strong>
+                    <small>1 GB Memory / 1024 MB</small>
+                </button>
+
+                <!-- [PLAY-STAGE-02] Normal stage: 2 GB memory -->
+                <button class="mode-card simulation-card stage-type-card" data-stage-type="normal">
+                    <span class="mode-icon">Ⅱ</span>
+                    <strong>NORMAL</strong>
+                    <small>2 GB Memory / 2048 MB</small>
+                </button>
+
+                <!-- [PLAY-STAGE-03] Hard stage: 3 GB memory -->
+                <button class="mode-card play-card stage-type-card" data-stage-type="hard">
+                    <span class="mode-icon">Ⅲ</span>
+                    <strong>HARD</strong>
+                    <small>3 GB Memory / 3072 MB</small>
+                </button>
+            </div>
+
+            <button id="playStageBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+
+    <!-- =============================================================
+         [SCREEN-05] SIMULATION COMPACTION CHOICE SCREEN
+         Appears ONLY after choosing a Simulation algorithm.
+         Flow: Simulation Mode -> Algorithm -> With/Without Compaction -> Simulation Screen
+    ============================================================== -->
+    <section id="simulationCompactionScreen" class="screen">
+        <div class="algorithm-wrapper">
+            <h1 class="screen-title">SIMULATION SETUP</h1>
+            <p id="simulationSetupSubtitle" class="screen-subtitle">Choose whether this simulation may use compaction.</p>
+
+            <div class="mode-card-grid">
+                <!-- [SIM-SETUP-01] Simulation with automatic compaction -->
+                <button id="simWithCompactionButton" class="mode-card simulation-card">
+                    <span class="mode-icon">▣</span>
+                    <strong>WITH COMPACTION</strong>
+                    <small>If no single free block fits, the simulator compacts memory automatically when total free memory is enough.</small>
+                </button>
+
+                <!-- [SIM-SETUP-02] Simulation without compaction -->
+                <button id="simNoCompactionButton" class="mode-card play-card">
+                    <span class="mode-icon">▥</span>
+                    <strong>NO COMPACTION</strong>
+                    <small>The selected algorithm stops when no current free block can fit the process.</small>
+                </button>
+            </div>
+
+            <button id="simSetupBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+
+    <!-- =============================================================
+         [SCREEN-06] PLAY SCREEN
+         Timed game mode.
+         Player clicks the correct block within 3 seconds.
+    ============================================================== -->
+    <section id="playScreen" class="screen game-screen">
+
+        <!-- [PLAY-HEADER] Top bar -->
+        <header class="game-header">
+            <div>
+                <h1>RAM RUSH</h1>
+                <p id="playStageLabel">FIRST FIT STAGE</p>
+            </div>
+            <button id="playExitButton" class="small-button">EXIT</button>
+        </header>
+
+        <!-- [PLAY-LAYOUT] Main game grid -->
+        <main class="play-layout">
+
+            <!-- [PLAY-LEFT] Status panel -->
+            <section class="panel status-panel">
+                <h2>SYSTEM</h2>
+
+                <!-- [PLAY-STAT-01] Hearts -->
+                <div class="stat-block">
+                    <span>HEARTS</span>
+                    <strong id="heartDisplay">♥ ♥ ♥ ♥</strong>
+                </div>
+
+                <!-- [PLAY-STAT-02] Score -->
+                <div class="stat-block">
+                    <span>SCORE</span>
+                    <strong id="playScore">0</strong>
+                </div>
+
+                <!-- [PLAY-STAT-03] Processed counter -->
+                <div class="stat-block">
+                    <span>PROCESSED</span>
+                    <strong id="processedCount">0</strong>
+                </div>
+
+                <!-- [PLAY-STAT-04] Unprocessed counter -->
+                <div class="stat-block">
+                    <span>UNPROCESSED</span>
+                    <strong id="unprocessedCount">0</strong>
+                </div>
+            </section>
+
+            <!-- [PLAY-CENTER] Current process, timer, queue, memory -->
+            <section class="panel center-panel">
+                <!-- [PLAY-CURRENT] Current process shown big in the middle -->
+                <div class="current-process-box">
+                    <span>CURRENT PROCESS</span>
+                    <strong id="currentProcessText">chrome.exe — 180 MB</strong>
+                </div>
+
+                <!-- [PLAY-TIMER] 3-second countdown -->
+                <div class="timer-box">
+                    <span>TIME TO DECIDE</span>
+                    <strong id="timerText">3</strong>
+                    <div class="timer-bar-shell">
+                        <div id="timerBar" class="timer-bar-fill"></div>
+                    </div>
+                </div>
+
+                <!-- [PLAY-QUEUE] Visible middle queue -->
+                <div class="queue-section">
+                    <h2>PROCESS QUEUE</h2>
+                    <div id="playQueueDisplay" class="queue-row"></div>
+                </div>
+
+                <!-- [PLAY-MEMORY] Memory blocks -->
+                <div class="memory-section">
+                    <h2>MEMORY BLOCKS</h2>
+                    <div id="playMemoryBlocks" class="memory-grid"></div>
+                </div>
+            </section>
+
+            <!-- [PLAY-RIGHT] Controls and message -->
+            <section class="panel controls-panel">
+                <h2>CONTROL</h2>
+
+                <!-- [PLAY-RULE] Algorithm rule text -->
+                <div class="rule-box">
+                    <span>RULE</span>
+                    <p id="playRuleText">Click the first block large enough.</p>
+                </div>
+
+                <!-- [PLAY-MESSAGE] Feedback text -->
+                <div id="playMessage" class="message-box">Choose the correct block before time runs out.</div>
+
+                <!-- [PLAY-COMPACT] Manual compaction button; also appears in alert. -->
+                <button id="playCompactButton" class="yellow-button">COMPACT MEMORY</button>
+
+                <!-- [PLAY-RESTART] Restart current stage -->
+                <button id="playRestartButton" class="small-button">RESTART STAGE</button>
+            </section>
+        </main>
+    </section>
+
+    <!-- =============================================================
+         [SCREEN-07] SIMULATION SCREEN
+         Automatic algorithm visualizer.
+    ============================================================== -->
+    <section id="simulationScreen" class="screen game-screen">
+
+        <!-- [SIM-HEADER] Simulation header -->
+        <header class="game-header">
+            <div>
+                <h1>SIMULATION</h1>
+                <p id="simulationStageLabel">FIRST FIT AUTO</p>
+            </div>
+            <button id="simulationExitButton" class="small-button">EXIT</button>
+        </header>
+
+        <!-- [SIM-LAYOUT] Simulation layout -->
+        <main class="simulation-layout">
+
+            <!-- [SIM-CENTER] Process, queue, memory -->
+            <section class="panel center-panel wide-panel">
+                <div class="current-process-box">
+                    <span>CURRENT PROCESS</span>
+                    <strong id="simulationProcessText">chrome.exe — 180 MB</strong>
+                </div>
+
+                <div class="queue-section">
+                    <h2>PROCESS QUEUE</h2>
+                    <div id="simulationQueueDisplay" class="queue-row"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>MEMORY BLOCKS</h2>
+                    <div id="simulationMemoryBlocks" class="memory-grid"></div>
+                </div>
+            </section>
+
+            <!-- [SIM-RIGHT] Simulation controls -->
+            <section class="panel controls-panel">
+                <h2>SIM CONTROL</h2>
+                <!-- [SIM-CONTROL-01] Step and Auto are the only simulation actions. -->
+                <button id="simulationStepButton" class="cyan-button">STEP</button>
+                <button id="simulationAutoButton" class="pink-button">AUTO RUN</button>
+
+                <!-- [SIM-INFO] Algorithm info replaces extra buttons. -->
+                <div class="rule-box">
+                    <span>ALGORITHM INFO</span>
+                    <p id="simulationAlgorithmInfo">First Fit chooses the first block large enough.</p>
+                    <p id="simulationCompactionInfo">Compaction: OFF</p>
+                </div>
+
+                <div id="simulationMessage" class="message-box">Press STEP to place the current process.</div>
+            </section>
+        </main>
+    </section>
+
+    <!-- =============================================================
+         [SCREEN-08] CPU SCHEDULING ALGORITHM SELECT SCREEN
+    ============================================================== -->
+    <section id="cpuAlgorithmScreen" class="screen">
+        <div class="algorithm-wrapper">
+            <h1 class="screen-title">CPU SCHEDULING</h1>
+            <p class="screen-subtitle">Choose a scheduling algorithm to simulate.</p>
+
+            <div class="algorithm-card-grid">
+                <button class="algorithm-card" data-cpu-algo="fcfs">
+                    <strong>FCFS</strong>
+                    <small>First Come First Served — runs in arrival order.</small>
+                </button>
+                <button class="algorithm-card" data-cpu-algo="sjf">
+                    <strong>SJF</strong>
+                    <small>Shortest Job First — shortest burst among arrived runs next.</small>
+                </button>
+                <button class="algorithm-card" data-cpu-algo="priority">
+                    <strong>PRIORITY</strong>
+                    <small>Lowest priority number among arrived runs next.</small>
+                </button>
+                <button class="algorithm-card" data-cpu-algo="rr">
+                    <strong>ROUND ROBIN</strong>
+                    <small>Each process gets a 2-unit time slice in turn.</small>
+                </button>
+            </div>
+
+            <button id="cpuAlgoBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+
+    <!-- =============================================================
+         [SCREEN-09] CPU SCHEDULING SIMULATION SCREEN
+    ============================================================== -->
+    <section id="cpuScreen" class="screen game-screen">
+        <header class="game-header">
+            <div>
+                <h1>CPU SCHEDULING</h1>
+                <p id="cpuStageLabel">FCFS</p>
+            </div>
+            <button id="cpuExitButton" class="small-button">EXIT</button>
+        </header>
+
+        <main class="simulation-layout">
+            <section class="panel center-panel wide-panel">
+                <div class="queue-section">
+                    <h2>PROCESS TABLE</h2>
+                    <div id="cpuProcessTable" class="queue-row"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>GANTT CHART</h2>
+                    <div id="cpuGanttChart" class="gantt-row"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>RESULTS</h2>
+                    <div id="cpuResultsTable">Run the scheduler to see results.</div>
+                </div>
+            </section>
+
+            <section class="panel controls-panel">
+                <h2>SIM CONTROL</h2>
+                <button id="cpuStepButton" class="cyan-button">STEP</button>
+                <button id="cpuAutoButton" class="pink-button">AUTO RUN</button>
+                <button id="cpuRestartButton" class="small-button">RESTART</button>
+
+                <div class="rule-box">
+                    <span>ALGORITHM INFO</span>
+                    <p id="cpuAlgorithmInfo">First Come First Served.</p>
+                </div>
+
+                <div id="cpuMessage" class="message-box">Press STEP to build the Gantt chart.</div>
+            </section>
+        </main>
+    </section>
+
+    <!-- =============================================================
+         [SCREEN-10] VIRTUAL MEMORY ALGORITHM SELECT SCREEN
+    ============================================================== -->
+    <section id="vmAlgorithmScreen" class="screen">
+        <div class="algorithm-wrapper">
+            <h1 class="screen-title">VIRTUAL MEMORY</h1>
+            <p class="screen-subtitle">Choose a page replacement algorithm.</p>
+
+            <div class="algorithm-card-grid">
+                <button class="algorithm-card" data-vm-algo="fifo">
+                    <strong>FIFO</strong>
+                    <small>Replace the page that has been in memory longest.</small>
+                </button>
+                <button class="algorithm-card" data-vm-algo="lru">
+                    <strong>LRU</strong>
+                    <small>Replace the page used least recently.</small>
+                </button>
+                <button class="algorithm-card" data-vm-algo="optimal">
+                    <strong>OPTIMAL</strong>
+                    <small>Replace the page used farthest in the future.</small>
+                </button>
+            </div>
+
+            <button id="vmAlgoBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+
+    <!-- =============================================================
+         [SCREEN-11] VIRTUAL MEMORY SIMULATION SCREEN
+    ============================================================== -->
+    <section id="vmScreen" class="screen game-screen">
+        <header class="game-header">
+            <div>
+                <h1>VIRTUAL MEMORY</h1>
+                <p id="vmStageLabel">FIFO</p>
+            </div>
+            <button id="vmExitButton" class="small-button">EXIT</button>
+        </header>
+
+        <main class="simulation-layout">
+            <section class="panel center-panel wide-panel">
+                <div class="queue-section">
+                    <h2>REFERENCE STRING</h2>
+                    <div id="vmReferenceRow" class="queue-row"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>FRAMES</h2>
+                    <div id="vmFrames" class="memory-grid"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>RESULTS</h2>
+                    <div id="vmResultsTable">Run the simulation to see page fault stats.</div>
+                </div>
+            </section>
+
+            <section class="panel controls-panel">
+                <h2>SIM CONTROL</h2>
+                <button id="vmStepButton" class="cyan-button">STEP</button>
+                <button id="vmAutoButton" class="pink-button">AUTO RUN</button>
+                <button id="vmRestartButton" class="small-button">RESTART</button>
+
+                <div class="rule-box">
+                    <span>ALGORITHM INFO</span>
+                    <p id="vmAlgorithmInfo">FIFO page replacement.</p>
+                </div>
+
+                <div id="vmMessage" class="message-box">Press STEP to process the next page reference.</div>
+            </section>
+        </main>
+    </section>
+
+    <!-- =============================================================
+         [SCREEN-12] DISK SCHEDULING ALGORITHM SELECT SCREEN
+    ============================================================== -->
+    <section id="diskAlgorithmScreen" class="screen">
+        <div class="algorithm-wrapper">
+            <h1 class="screen-title">DISK SCHEDULING</h1>
+            <p class="screen-subtitle">Choose a disk scheduling algorithm.</p>
+
+            <div class="algorithm-card-grid">
+                <button class="algorithm-card" data-disk-algo="fcfs">
+                    <strong>FCFS</strong>
+                    <small>Service requests in the order they arrive.</small>
+                </button>
+                <button class="algorithm-card" data-disk-algo="sstf">
+                    <strong>SSTF</strong>
+                    <small>Always service the closest request to the head.</small>
+                </button>
+                <button class="algorithm-card" data-disk-algo="scan">
+                    <strong>SCAN</strong>
+                    <small>Sweep toward higher tracks, then reverse.</small>
+                </button>
+                <button class="algorithm-card" data-disk-algo="cscan">
+                    <strong>C-SCAN</strong>
+                    <small>Sweep up, jump back to 0, then continue up.</small>
+                </button>
+                <button class="algorithm-card" data-disk-algo="look">
+                    <strong>LOOK</strong>
+                    <small>Like SCAN, but reverses at the last request.</small>
+                </button>
+            </div>
+
+            <button id="diskAlgoBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+
+    <!-- =============================================================
+         [SCREEN-13] DISK SCHEDULING SIMULATION SCREEN
+    ============================================================== -->
+    <section id="diskScreen" class="screen game-screen">
+        <header class="game-header">
+            <div>
+                <h1>DISK SCHEDULING</h1>
+                <p id="diskStageLabel">FCFS</p>
+            </div>
+            <button id="diskExitButton" class="small-button">EXIT</button>
+        </header>
+
+        <main class="simulation-layout">
+            <section class="panel center-panel wide-panel">
+                <div class="queue-section">
+                    <h2>REQUEST QUEUE (HEAD START = 53)</h2>
+                    <div id="diskRequestRow" class="queue-row"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>DISK TRACK (0 - 199)</h2>
+                    <div id="diskTrackLine" class="disk-line"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>SERVICE ORDER</h2>
+                    <div id="diskOrderRow" class="queue-row"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>RESULTS</h2>
+                    <div id="diskResultsTable">Run the simulation to see total head movement.</div>
+                </div>
+            </section>
+
+            <section class="panel controls-panel">
+                <h2>SIM CONTROL</h2>
+                <button id="diskStepButton" class="cyan-button">STEP</button>
+                <button id="diskAutoButton" class="pink-button">AUTO RUN</button>
+                <button id="diskRestartButton" class="small-button">RESTART</button>
+
+                <div class="rule-box">
+                    <span>ALGORITHM INFO</span>
+                    <p id="diskAlgorithmInfo">First Come First Served.</p>
+                </div>
+
+                <div id="diskMessage" class="message-box">Press STEP to move the disk head.</div>
+            </section>
+        </main>
+    </section>
+
+    <!-- =============================================================
+         [MODAL-01] COMPACTION ALERT SCREEN
+         Appears when no block can fit the current process but total free
+         memory may still be enough after compaction.
+    ============================================================== -->
+    <div id="compactionModal" class="modal hidden">
+        <div class="modal-card">
+            <h2>MEMORY FULL / FRAGMENTED</h2>
+            <p id="compactionModalText">No single block can fit the current process. Use compaction?</p>
+            <div class="modal-buttons">
+                <button id="confirmCompactionButton" class="yellow-button">USE COMPACTION</button>
+                <button id="declineCompactionButton" class="small-button">DECLINE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================================
+         [MODAL-02] END GAME / RESULTS SCREEN
+         Shows processed and unprocessed processes at the end.
+    ============================================================== -->
+    <div id="resultsModal" class="modal hidden">
+        <div class="modal-card results-card">
+            <h2 id="resultsTitle">RUN COMPLETE</h2>
+            <div id="resultsSummary" class="results-summary"></div>
+            <div class="result-lists">
+                <div>
+                    <h3>PROCESSED</h3>
+                    <div id="processedList" class="result-list-box"></div>
+                </div>
+                <div>
+                    <h3>UNPROCESSED</h3>
+                    <div id="unprocessedList" class="result-list-box"></div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="resultsRestartButton" class="cyan-button">RESTART</button>
+                <button id="resultsTryAlgorithmButton" class="yellow-button">TRY ANOTHER ALGORITHM</button>
+                <button id="resultsMenuButton" class="small-button">MENU</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- [HTML-END] JavaScript file -->
+    <script src="script.js"></script>
+</body>
+</html>
