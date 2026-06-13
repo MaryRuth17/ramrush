@@ -1,20 +1,25 @@
-let cpuAlgorithm = null;
-let cpuGantt = [];
-let cpuRevealed = 0;
-let cpuAutoInterval = null;
+/* =============================================================
+   [JS-05] GAME STATE
+   These variables change while the game runs.
+============================================================== */
+let selectedMode = null;          // 'play' or 'simulation'
+let selectedAlgorithm = null;     // 'firstFit', 'bestFit', or 'worstFit'
+let selectedStageType = null;      // Play only: 'easy', 'normal', or 'hard'
+let simulationUseCompaction = false; // true only if user selects WITH COMPACTION before simulation starts
 
-let vmAlgorithm = null;
-let vmFrameSlots = [];
-let vmFifoOrder = [];
-let vmRecency = [];
-let vmIndex = 0;
-let vmFaults = 0;
-let vmHits = 0;
-let vmLog = [];
-let vmAutoInterval = null;
+let memory = [];
+let processQueue = [];
+let processedProcesses = [];
+let unprocessedProcesses = [];
 
-let diskAlgorithm = null;
-let diskOrder = [];
-let diskRevealed = 0;
-let diskAutoInterval = null;
+let hearts = MAX_HEARTS;
+let score = 0;
+let generatedProcessCount = 0;
+let isRoundLocked = false;
+
+let timerInterval = null;
+let timerRemaining = TIME_LIMIT_SECONDS;
+
+let simulationAutoInterval = null;
+let pendingCompactionContext = null; // Play mode only for automatic prompts. Simulation compaction is optional button only.
 

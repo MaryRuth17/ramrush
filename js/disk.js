@@ -1,3 +1,16 @@
+/* =============================================================
+   [JS-30] DISK SCHEDULING — DATA & ALGORITHMS
+   FCFS, SSTF, SCAN, C-SCAN, LOOK.
+============================================================== */
+const DISK_REQUESTS_TEMPLATE = [98, 183, 37, 122, 14, 124, 65, 67];
+const DISK_HEAD_START = 53;
+const DISK_MAX_TRACK = 199;
+
+let diskAlgorithm = null;
+let diskOrder = [];
+let diskRevealed = 0;
+let diskAutoInterval = null;
+
 function getDiskAlgoLabel(algorithm) {
     if (algorithm === 'fcfs') return 'FCFS';
     if (algorithm === 'sstf') return 'SSTF';
@@ -173,44 +186,3 @@ function stopDiskAutoRun() {
     diskAutoButton.textContent = 'AUTO RUN';
 }
 
-/* =============================================================
-   [JS-32] EVENT LISTENERS — NEW TOPIC SCREENS
-============================================================== */
-// CPU Scheduling
-cpuAlgoBackButton.addEventListener('click', () => showScreen('topic'));
-document.querySelectorAll('[data-cpu-algo]').forEach(card => {
-    card.addEventListener('click', () => startCpuMode(card.dataset.cpuAlgo));
-});
-cpuStepButton.addEventListener('click', cpuStep);
-cpuAutoButton.addEventListener('click', toggleCpuAutoRun);
-cpuRestartButton.addEventListener('click', () => startCpuMode(cpuAlgorithm));
-cpuExitButton.addEventListener('click', () => {
-    stopCpuAutoRun();
-    showScreen('topic');
-});
-
-// Virtual Memory
-vmAlgoBackButton.addEventListener('click', () => showScreen('topic'));
-document.querySelectorAll('[data-vm-algo]').forEach(card => {
-    card.addEventListener('click', () => startVmMode(card.dataset.vmAlgo));
-});
-vmStepButton.addEventListener('click', vmStep);
-vmAutoButton.addEventListener('click', toggleVmAutoRun);
-vmRestartButton.addEventListener('click', () => startVmMode(vmAlgorithm));
-vmExitButton.addEventListener('click', () => {
-    stopVmAutoRun();
-    showScreen('topic');
-});
-
-// Disk Scheduling
-diskAlgoBackButton.addEventListener('click', () => showScreen('topic'));
-document.querySelectorAll('[data-disk-algo]').forEach(card => {
-    card.addEventListener('click', () => startDiskMode(card.dataset.diskAlgo));
-});
-diskStepButton.addEventListener('click', diskStep);
-diskAutoButton.addEventListener('click', toggleDiskAutoRun);
-diskRestartButton.addEventListener('click', () => startDiskMode(diskAlgorithm));
-diskExitButton.addEventListener('click', () => {
-    stopDiskAutoRun();
-    showScreen('topic');
-});
