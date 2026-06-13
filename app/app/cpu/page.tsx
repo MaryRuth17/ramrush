@@ -610,6 +610,7 @@ function SimulationScreen({
 function PlayScreen({
   algorithm, processes, arrivedProcesses, completedNames, currentTime, hearts, score,
   playMessage, playDone, timerKey, timerRunning, correctAnswer, flashRight, flashWrong,
+  gameStarted, onStartGame,
   onProcessClick, onTimeout, onRestart, onExit,
 }: {
   algorithm: CpuAlgorithm; processes: CpuProcess[]; arrivedProcesses: CpuProcess[];
