@@ -1,0 +1,39 @@
+<!-- =============================================================
+         [SCREEN-04] PLAY STAGE TYPE SCREEN
+         Appears ONLY after choosing a Play algorithm.
+         Required flow: START -> PLAY -> ALGORITHM -> STAGE TYPE.
+         Stage type controls starting memory size:
+         EASY = 1 GB, NORMAL = 2 GB, HARD = 3 GB.
+    ============================================================== -->
+    <section id="playStageTypeScreen" class="screen">
+        <div class="algorithm-wrapper">
+            <h1 class="screen-title">CHOOSE STAGE TYPE</h1>
+            <p id="playStageSetupSubtitle" class="screen-subtitle">Choose the memory size for this play stage.</p>
+
+            <div class="mode-card-grid">
+                <!-- [PLAY-STAGE-01] Easy stage: 1 GB memory -->
+                <button class="mode-card play-card stage-type-card" data-stage-type="easy">
+                    <span class="mode-icon">Ⅰ</span>
+                    <strong>EASY</strong>
+                    <small>1 GB Memory / 1024 MB</small>
+                </button>
+
+                <!-- [PLAY-STAGE-02] Normal stage: 2 GB memory -->
+                <button class="mode-card simulation-card stage-type-card" data-stage-type="normal">
+                    <span class="mode-icon">Ⅱ</span>
+                    <strong>NORMAL</strong>
+                    <small>2 GB Memory / 2048 MB</small>
+                </button>
+
+                <!-- [PLAY-STAGE-03] Hard stage: 3 GB memory -->
+                <button class="mode-card play-card stage-type-card" data-stage-type="hard">
+                    <span class="mode-icon">Ⅲ</span>
+                    <strong>HARD</strong>
+                    <small>3 GB Memory / 3072 MB</small>
+                </button>
+            </div>
+
+            <button id="playStageBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+

@@ -1,0 +1,35 @@
+<!-- =============================================================
+         [SCREEN-13] DISK SCHEDULING SIMULATION SCREEN
+    ============================================================== -->
+    <section id="diskScreen" class="screen game-screen">
+        <header class="game-header">
+            <div>
+                <h1>DISK SCHEDULING</h1>
+                <p id="diskStageLabel">FCFS</p>
+            </div>
+            <button id="diskExitButton" class="small-button">EXIT</button>
+        </header>
+
+        <main class="simulation-layout">
+            <section class="panel center-panel wide-panel">
+                <div class="queue-section">
+                    <h2>REQUEST QUEUE (HEAD START = 53)</h2>
+                    <div id="diskRequestRow" class="queue-row"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>DISK TRACK (0 - 199)</h2>
+                    <div id="diskTrackLine" class="disk-line"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>SERVICE ORDER</h2>
+                    <div id="diskOrderRow" class="queue-row"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>RESULTS</h2>
+                    <div id="diskResultsTable">Run the simulation to see total head movement.</div>
+                </div>
+            </section>
+

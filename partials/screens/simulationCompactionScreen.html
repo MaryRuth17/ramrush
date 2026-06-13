@@ -1,0 +1,30 @@
+<!-- =============================================================
+         [SCREEN-05] SIMULATION COMPACTION CHOICE SCREEN
+         Appears ONLY after choosing a Simulation algorithm.
+         Flow: Simulation Mode -> Algorithm -> With/Without Compaction -> Simulation Screen
+    ============================================================== -->
+    <section id="simulationCompactionScreen" class="screen">
+        <div class="algorithm-wrapper">
+            <h1 class="screen-title">SIMULATION SETUP</h1>
+            <p id="simulationSetupSubtitle" class="screen-subtitle">Choose whether this simulation may use compaction.</p>
+
+            <div class="mode-card-grid">
+                <!-- [SIM-SETUP-01] Simulation with automatic compaction -->
+                <button id="simWithCompactionButton" class="mode-card simulation-card">
+                    <span class="mode-icon">▣</span>
+                    <strong>WITH COMPACTION</strong>
+                    <small>If no single free block fits, the simulator compacts memory automatically when total free memory is enough.</small>
+                </button>
+
+                <!-- [SIM-SETUP-02] Simulation without compaction -->
+                <button id="simNoCompactionButton" class="mode-card play-card">
+                    <span class="mode-icon">▥</span>
+                    <strong>NO COMPACTION</strong>
+                    <small>The selected algorithm stops when no current free block can fit the process.</small>
+                </button>
+            </div>
+
+            <button id="simSetupBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+

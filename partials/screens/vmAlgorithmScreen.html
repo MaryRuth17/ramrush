@@ -1,0 +1,27 @@
+<!-- =============================================================
+         [SCREEN-10] VIRTUAL MEMORY ALGORITHM SELECT SCREEN
+    ============================================================== -->
+    <section id="vmAlgorithmScreen" class="screen">
+        <div class="algorithm-wrapper">
+            <h1 class="screen-title">VIRTUAL MEMORY</h1>
+            <p class="screen-subtitle">Choose a page replacement algorithm.</p>
+
+            <div class="algorithm-card-grid">
+                <button class="algorithm-card" data-vm-algo="fifo">
+                    <strong>FIFO</strong>
+                    <small>Replace the page that has been in memory longest.</small>
+                </button>
+                <button class="algorithm-card" data-vm-algo="lru">
+                    <strong>LRU</strong>
+                    <small>Replace the page used least recently.</small>
+                </button>
+                <button class="algorithm-card" data-vm-algo="optimal">
+                    <strong>OPTIMAL</strong>
+                    <small>Replace the page used farthest in the future.</small>
+                </button>
+            </div>
+
+            <button id="vmAlgoBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+

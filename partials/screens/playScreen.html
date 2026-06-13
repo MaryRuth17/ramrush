@@ -1,0 +1,48 @@
+<!-- =============================================================
+         [SCREEN-06] PLAY SCREEN
+         Timed game mode.
+         Player clicks the correct block within 3 seconds.
+    ============================================================== -->
+    <section id="playScreen" class="screen game-screen">
+
+        <!-- [PLAY-HEADER] Top bar -->
+        <header class="game-header">
+            <div>
+                <h1>RAM RUSH</h1>
+                <p id="playStageLabel">FIRST FIT STAGE</p>
+            </div>
+            <button id="playExitButton" class="small-button">EXIT</button>
+        </header>
+
+        <!-- [PLAY-LAYOUT] Main game grid -->
+        <main class="play-layout">
+
+            <!-- [PLAY-LEFT] Status panel -->
+            <section class="panel status-panel">
+                <h2>SYSTEM</h2>
+
+                <!-- [PLAY-STAT-01] Hearts -->
+                <div class="stat-block">
+                    <span>HEARTS</span>
+                    <strong id="heartDisplay">♥ ♥ ♥ ♥</strong>
+                </div>
+
+                <!-- [PLAY-STAT-02] Score -->
+                <div class="stat-block">
+                    <span>SCORE</span>
+                    <strong id="playScore">0</strong>
+                </div>
+
+                <!-- [PLAY-STAT-03] Processed counter -->
+                <div class="stat-block">
+                    <span>PROCESSED</span>
+                    <strong id="processedCount">0</strong>
+                </div>
+
+                <!-- [PLAY-STAT-04] Unprocessed counter -->
+                <div class="stat-block">
+                    <span>UNPROCESSED</span>
+                    <strong id="unprocessedCount">0</strong>
+                </div>
+            </section>
+

@@ -1,0 +1,30 @@
+<!-- =============================================================
+         [SCREEN-11] VIRTUAL MEMORY SIMULATION SCREEN
+    ============================================================== -->
+    <section id="vmScreen" class="screen game-screen">
+        <header class="game-header">
+            <div>
+                <h1>VIRTUAL MEMORY</h1>
+                <p id="vmStageLabel">FIFO</p>
+            </div>
+            <button id="vmExitButton" class="small-button">EXIT</button>
+        </header>
+
+        <main class="simulation-layout">
+            <section class="panel center-panel wide-panel">
+                <div class="queue-section">
+                    <h2>REFERENCE STRING</h2>
+                    <div id="vmReferenceRow" class="queue-row"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>FRAMES</h2>
+                    <div id="vmFrames" class="memory-grid"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>RESULTS</h2>
+                    <div id="vmResultsTable">Run the simulation to see page fault stats.</div>
+                </div>
+            </section>
+

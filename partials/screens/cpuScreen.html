@@ -1,0 +1,30 @@
+<!-- =============================================================
+         [SCREEN-09] CPU SCHEDULING SIMULATION SCREEN
+    ============================================================== -->
+    <section id="cpuScreen" class="screen game-screen">
+        <header class="game-header">
+            <div>
+                <h1>CPU SCHEDULING</h1>
+                <p id="cpuStageLabel">FCFS</p>
+            </div>
+            <button id="cpuExitButton" class="small-button">EXIT</button>
+        </header>
+
+        <main class="simulation-layout">
+            <section class="panel center-panel wide-panel">
+                <div class="queue-section">
+                    <h2>PROCESS TABLE</h2>
+                    <div id="cpuProcessTable" class="queue-row"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>GANTT CHART</h2>
+                    <div id="cpuGanttChart" class="gantt-row"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>RESULTS</h2>
+                    <div id="cpuResultsTable">Run the scheduler to see results.</div>
+                </div>
+            </section>
+

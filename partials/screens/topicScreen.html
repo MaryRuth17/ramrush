@@ -1,0 +1,43 @@
+<!-- =============================================================
+         [SCREEN-01B] TOPIC SELECT SCREEN
+         Player chooses which OS topic to practice.
+         Flow: Opening Screen -> START -> Topic Select Screen
+    ============================================================== -->
+    <section id="topicScreen" class="screen">
+        <div class="mode-wrapper">
+            <h1 class="screen-title">SELECT TOPIC</h1>
+
+            <div class="mode-card-grid">
+                <!-- [TOPIC-01] Memory Allocation (original RAM Rush game) -->
+                <button class="mode-card play-card topic-card" data-topic="memory">
+                    <span class="mode-icon">▦</span>
+                    <strong>MEMORY ALLOCATION</strong>
+                    <small>First Fit, Best Fit, Worst Fit</small>
+                </button>
+
+                <!-- [TOPIC-02] CPU Scheduling -->
+                <button class="mode-card simulation-card topic-card" data-topic="cpu">
+                    <span class="mode-icon">⏱</span>
+                    <strong>CPU SCHEDULING</strong>
+                    <small>FCFS, SJF, Priority, Round Robin</small>
+                </button>
+
+                <!-- [TOPIC-03] Virtual Memory / Page Replacement -->
+                <button class="mode-card play-card topic-card" data-topic="vm">
+                    <span class="mode-icon">▤</span>
+                    <strong>VIRTUAL MEMORY</strong>
+                    <small>FIFO, LRU, Optimal page replacement</small>
+                </button>
+
+                <!-- [TOPIC-04] Disk / Mass Storage Scheduling -->
+                <button class="mode-card simulation-card topic-card" data-topic="disk">
+                    <span class="mode-icon">◎</span>
+                    <strong>DISK SCHEDULING</strong>
+                    <small>FCFS, SSTF, SCAN, C-SCAN, LOOK</small>
+                </button>
+            </div>
+
+            <button id="topicBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+

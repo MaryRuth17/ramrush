@@ -1,0 +1,29 @@
+<!-- =============================================================
+         [SCREEN-02] MODE SELECT SCREEN
+         Player chooses PLAY or SIMULATION.
+         (Memory Allocation topic only)
+    ============================================================== -->
+    <section id="modeScreen" class="screen">
+        <div class="mode-wrapper">
+            <h1 class="screen-title">SELECT MODE</h1>
+
+            <div class="mode-card-grid">
+                <!-- [MODE-01] Play mode card -->
+                <button id="openPlaySelectButton" class="mode-card play-card">
+                    <span class="mode-icon">▶</span>
+                    <strong>PLAY</strong>
+                    <small>Timed challenge with hearts</small>
+                </button>
+
+                <!-- [MODE-02] Simulation mode card -->
+                <button id="openSimSelectButton" class="mode-card simulation-card">
+                    <span class="mode-icon">⚙</span>
+                    <strong>SIMULATION</strong>
+                    <small>Automatic algorithm visualizer</small>
+                </button>
+            </div>
+
+            <button id="modeBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+

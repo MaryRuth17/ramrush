@@ -1,0 +1,31 @@
+<!-- =============================================================
+         [SCREEN-08] CPU SCHEDULING ALGORITHM SELECT SCREEN
+    ============================================================== -->
+    <section id="cpuAlgorithmScreen" class="screen">
+        <div class="algorithm-wrapper">
+            <h1 class="screen-title">CPU SCHEDULING</h1>
+            <p class="screen-subtitle">Choose a scheduling algorithm to simulate.</p>
+
+            <div class="algorithm-card-grid">
+                <button class="algorithm-card" data-cpu-algo="fcfs">
+                    <strong>FCFS</strong>
+                    <small>First Come First Served — runs in arrival order.</small>
+                </button>
+                <button class="algorithm-card" data-cpu-algo="sjf">
+                    <strong>SJF</strong>
+                    <small>Shortest Job First — shortest burst among arrived runs next.</small>
+                </button>
+                <button class="algorithm-card" data-cpu-algo="priority">
+                    <strong>PRIORITY</strong>
+                    <small>Lowest priority number among arrived runs next.</small>
+                </button>
+                <button class="algorithm-card" data-cpu-algo="rr">
+                    <strong>ROUND ROBIN</strong>
+                    <small>Each process gets a 2-unit time slice in turn.</small>
+                </button>
+            </div>
+
+            <button id="cpuAlgoBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+

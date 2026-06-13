@@ -55,7 +55,7 @@
         </div>
     </section>
 
-    <!-- =============================================================
+<!-- =============================================================
          [SCREEN-01B] TOPIC SELECT SCREEN
          Player chooses which OS topic to practice.
          Flow: Opening Screen -> START -> Topic Select Screen
@@ -98,7 +98,7 @@
         </div>
     </section>
 
-    <!-- =============================================================
+<!-- =============================================================
          [SCREEN-02] MODE SELECT SCREEN
          Player chooses PLAY or SIMULATION.
          (Memory Allocation topic only)
@@ -127,7 +127,7 @@
         </div>
     </section>
 
-    <!-- =============================================================
+<!-- =============================================================
          [SCREEN-03] ALGORITHM SELECT SCREEN
          Used by both PLAY and SIMULATION.
          The text changes depending on selected mode.
@@ -161,7 +161,7 @@
         </div>
     </section>
 
-    <!-- =============================================================
+<!-- =============================================================
          [SCREEN-04] PLAY STAGE TYPE SCREEN
          Appears ONLY after choosing a Play algorithm.
          Required flow: START -> PLAY -> ALGORITHM -> STAGE TYPE.
@@ -200,7 +200,7 @@
         </div>
     </section>
 
-    <!-- =============================================================
+<!-- =============================================================
          [SCREEN-05] SIMULATION COMPACTION CHOICE SCREEN
          Appears ONLY after choosing a Simulation algorithm.
          Flow: Simulation Mode -> Algorithm -> With/Without Compaction -> Simulation Screen
@@ -230,7 +230,7 @@
         </div>
     </section>
 
-    <!-- =============================================================
+<!-- =============================================================
          [SCREEN-06] PLAY SCREEN
          Timed game mode.
          Player clicks the correct block within 3 seconds.
@@ -278,59 +278,7 @@
                 </div>
             </section>
 
-            <!-- [PLAY-CENTER] Current process, timer, queue, memory -->
-            <section class="panel center-panel">
-                <!-- [PLAY-CURRENT] Current process shown big in the middle -->
-                <div class="current-process-box">
-                    <span>CURRENT PROCESS</span>
-                    <strong id="currentProcessText">chrome.exe — 180 MB</strong>
-                </div>
-
-                <!-- [PLAY-TIMER] 3-second countdown -->
-                <div class="timer-box">
-                    <span>TIME TO DECIDE</span>
-                    <strong id="timerText">3</strong>
-                    <div class="timer-bar-shell">
-                        <div id="timerBar" class="timer-bar-fill"></div>
-                    </div>
-                </div>
-
-                <!-- [PLAY-QUEUE] Visible middle queue -->
-                <div class="queue-section">
-                    <h2>PROCESS QUEUE</h2>
-                    <div id="playQueueDisplay" class="queue-row"></div>
-                </div>
-
-                <!-- [PLAY-MEMORY] Memory blocks -->
-                <div class="memory-section">
-                    <h2>MEMORY BLOCKS</h2>
-                    <div id="playMemoryBlocks" class="memory-grid"></div>
-                </div>
-            </section>
-
-            <!-- [PLAY-RIGHT] Controls and message -->
-            <section class="panel controls-panel">
-                <h2>CONTROL</h2>
-
-                <!-- [PLAY-RULE] Algorithm rule text -->
-                <div class="rule-box">
-                    <span>RULE</span>
-                    <p id="playRuleText">Click the first block large enough.</p>
-                </div>
-
-                <!-- [PLAY-MESSAGE] Feedback text -->
-                <div id="playMessage" class="message-box">Choose the correct block before time runs out.</div>
-
-                <!-- [PLAY-COMPACT] Manual compaction button; also appears in alert. -->
-                <button id="playCompactButton" class="yellow-button">COMPACT MEMORY</button>
-
-                <!-- [PLAY-RESTART] Restart current stage -->
-                <button id="playRestartButton" class="small-button">RESTART STAGE</button>
-            </section>
-        </main>
-    </section>
-
-    <!-- =============================================================
+<!-- =============================================================
          [SCREEN-07] SIMULATION SCREEN
          Automatic algorithm visualizer.
     ============================================================== -->
@@ -366,26 +314,7 @@
                 </div>
             </section>
 
-            <!-- [SIM-RIGHT] Simulation controls -->
-            <section class="panel controls-panel">
-                <h2>SIM CONTROL</h2>
-                <!-- [SIM-CONTROL-01] Step and Auto are the only simulation actions. -->
-                <button id="simulationStepButton" class="cyan-button">STEP</button>
-                <button id="simulationAutoButton" class="pink-button">AUTO RUN</button>
-
-                <!-- [SIM-INFO] Algorithm info replaces extra buttons. -->
-                <div class="rule-box">
-                    <span>ALGORITHM INFO</span>
-                    <p id="simulationAlgorithmInfo">First Fit chooses the first block large enough.</p>
-                    <p id="simulationCompactionInfo">Compaction: OFF</p>
-                </div>
-
-                <div id="simulationMessage" class="message-box">Press STEP to place the current process.</div>
-            </section>
-        </main>
-    </section>
-
-    <!-- =============================================================
+<!-- =============================================================
          [SCREEN-08] CPU SCHEDULING ALGORITHM SELECT SCREEN
     ============================================================== -->
     <section id="cpuAlgorithmScreen" class="screen">
@@ -416,7 +345,7 @@
         </div>
     </section>
 
-    <!-- =============================================================
+<!-- =============================================================
          [SCREEN-09] CPU SCHEDULING SIMULATION SCREEN
     ============================================================== -->
     <section id="cpuScreen" class="screen game-screen">
@@ -446,23 +375,7 @@
                 </div>
             </section>
 
-            <section class="panel controls-panel">
-                <h2>SIM CONTROL</h2>
-                <button id="cpuStepButton" class="cyan-button">STEP</button>
-                <button id="cpuAutoButton" class="pink-button">AUTO RUN</button>
-                <button id="cpuRestartButton" class="small-button">RESTART</button>
-
-                <div class="rule-box">
-                    <span>ALGORITHM INFO</span>
-                    <p id="cpuAlgorithmInfo">First Come First Served.</p>
-                </div>
-
-                <div id="cpuMessage" class="message-box">Press STEP to build the Gantt chart.</div>
-            </section>
-        </main>
-    </section>
-
-    <!-- =============================================================
+<!-- =============================================================
          [SCREEN-10] VIRTUAL MEMORY ALGORITHM SELECT SCREEN
     ============================================================== -->
     <section id="vmAlgorithmScreen" class="screen">
@@ -489,7 +402,7 @@
         </div>
     </section>
 
-    <!-- =============================================================
+<!-- =============================================================
          [SCREEN-11] VIRTUAL MEMORY SIMULATION SCREEN
     ============================================================== -->
     <section id="vmScreen" class="screen game-screen">
@@ -519,23 +432,7 @@
                 </div>
             </section>
 
-            <section class="panel controls-panel">
-                <h2>SIM CONTROL</h2>
-                <button id="vmStepButton" class="cyan-button">STEP</button>
-                <button id="vmAutoButton" class="pink-button">AUTO RUN</button>
-                <button id="vmRestartButton" class="small-button">RESTART</button>
-
-                <div class="rule-box">
-                    <span>ALGORITHM INFO</span>
-                    <p id="vmAlgorithmInfo">FIFO page replacement.</p>
-                </div>
-
-                <div id="vmMessage" class="message-box">Press STEP to process the next page reference.</div>
-            </section>
-        </main>
-    </section>
-
-    <!-- =============================================================
+<!-- =============================================================
          [SCREEN-12] DISK SCHEDULING ALGORITHM SELECT SCREEN
     ============================================================== -->
     <section id="diskAlgorithmScreen" class="screen">
@@ -570,7 +467,7 @@
         </div>
     </section>
 
-    <!-- =============================================================
+<!-- =============================================================
          [SCREEN-13] DISK SCHEDULING SIMULATION SCREEN
     ============================================================== -->
     <section id="diskScreen" class="screen game-screen">
@@ -605,23 +502,7 @@
                 </div>
             </section>
 
-            <section class="panel controls-panel">
-                <h2>SIM CONTROL</h2>
-                <button id="diskStepButton" class="cyan-button">STEP</button>
-                <button id="diskAutoButton" class="pink-button">AUTO RUN</button>
-                <button id="diskRestartButton" class="small-button">RESTART</button>
-
-                <div class="rule-box">
-                    <span>ALGORITHM INFO</span>
-                    <p id="diskAlgorithmInfo">First Come First Served.</p>
-                </div>
-
-                <div id="diskMessage" class="message-box">Press STEP to move the disk head.</div>
-            </section>
-        </main>
-    </section>
-
-    <!-- =============================================================
+<!-- =============================================================
          [MODAL-01] COMPACTION ALERT SCREEN
          Appears when no block can fit the current process but total free
          memory may still be enough after compaction.
@@ -637,7 +518,7 @@
         </div>
     </div>
 
-    <!-- =============================================================
+<!-- =============================================================
          [MODAL-02] END GAME / RESULTS SCREEN
          Shows processed and unprocessed processes at the end.
     ============================================================== -->
@@ -663,7 +544,7 @@
         </div>
     </div>
 
-    <!-- [HTML-END] JavaScript files -->
+<!-- [HTML-END] JavaScript files -->
     <script src="js/dom.js"></script>
     <script src="js/data.js"></script>
     <script src="js/state.js"></script>

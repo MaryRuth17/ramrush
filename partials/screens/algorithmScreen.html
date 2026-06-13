@@ -1,0 +1,34 @@
+<!-- =============================================================
+         [SCREEN-03] ALGORITHM SELECT SCREEN
+         Used by both PLAY and SIMULATION.
+         The text changes depending on selected mode.
+    ============================================================== -->
+    <section id="algorithmScreen" class="screen">
+        <div class="algorithm-wrapper">
+            <h1 id="algorithmTitle" class="screen-title">CHOOSE ALGORITHM</h1>
+            <p id="algorithmSubtitle" class="screen-subtitle">Select an allocation algorithm.</p>
+
+            <div class="algorithm-card-grid">
+                <!-- [ALGO-01] First Fit button -->
+                <button class="algorithm-card" data-algorithm="firstFit">
+                    <strong>FIRST FIT</strong>
+                    <small>Choose the first free block large enough.</small>
+                </button>
+
+                <!-- [ALGO-02] Best Fit button -->
+                <button class="algorithm-card" data-algorithm="bestFit">
+                    <strong>BEST FIT</strong>
+                    <small>Choose the smallest valid free block.</small>
+                </button>
+
+                <!-- [ALGO-03] Worst Fit button -->
+                <button class="algorithm-card" data-algorithm="worstFit">
+                    <strong>WORST FIT</strong>
+                    <small>Choose the largest valid free block.</small>
+                </button>
+            </div>
+
+            <button id="algorithmBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+

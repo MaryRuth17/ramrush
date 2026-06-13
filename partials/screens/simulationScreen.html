@@ -1,0 +1,36 @@
+<!-- =============================================================
+         [SCREEN-07] SIMULATION SCREEN
+         Automatic algorithm visualizer.
+    ============================================================== -->
+    <section id="simulationScreen" class="screen game-screen">
+
+        <!-- [SIM-HEADER] Simulation header -->
+        <header class="game-header">
+            <div>
+                <h1>SIMULATION</h1>
+                <p id="simulationStageLabel">FIRST FIT AUTO</p>
+            </div>
+            <button id="simulationExitButton" class="small-button">EXIT</button>
+        </header>
+
+        <!-- [SIM-LAYOUT] Simulation layout -->
+        <main class="simulation-layout">
+
+            <!-- [SIM-CENTER] Process, queue, memory -->
+            <section class="panel center-panel wide-panel">
+                <div class="current-process-box">
+                    <span>CURRENT PROCESS</span>
+                    <strong id="simulationProcessText">chrome.exe — 180 MB</strong>
+                </div>
+
+                <div class="queue-section">
+                    <h2>PROCESS QUEUE</h2>
+                    <div id="simulationQueueDisplay" class="queue-row"></div>
+                </div>
+
+                <div class="memory-section">
+                    <h2>MEMORY BLOCKS</h2>
+                    <div id="simulationMemoryBlocks" class="memory-grid"></div>
+                </div>
+            </section>
+

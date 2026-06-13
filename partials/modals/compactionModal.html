@@ -1,0 +1,16 @@
+<!-- =============================================================
+         [MODAL-01] COMPACTION ALERT SCREEN
+         Appears when no block can fit the current process but total free
+         memory may still be enough after compaction.
+    ============================================================== -->
+    <div id="compactionModal" class="modal hidden">
+        <div class="modal-card">
+            <h2>MEMORY FULL / FRAGMENTED</h2>
+            <p id="compactionModalText">No single block can fit the current process. Use compaction?</p>
+            <div class="modal-buttons">
+                <button id="confirmCompactionButton" class="yellow-button">USE COMPACTION</button>
+                <button id="declineCompactionButton" class="small-button">DECLINE</button>
+            </div>
+        </div>
+    </div>
+

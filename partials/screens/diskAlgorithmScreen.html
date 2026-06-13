@@ -1,0 +1,35 @@
+<!-- =============================================================
+         [SCREEN-12] DISK SCHEDULING ALGORITHM SELECT SCREEN
+    ============================================================== -->
+    <section id="diskAlgorithmScreen" class="screen">
+        <div class="algorithm-wrapper">
+            <h1 class="screen-title">DISK SCHEDULING</h1>
+            <p class="screen-subtitle">Choose a disk scheduling algorithm.</p>
+
+            <div class="algorithm-card-grid">
+                <button class="algorithm-card" data-disk-algo="fcfs">
+                    <strong>FCFS</strong>
+                    <small>Service requests in the order they arrive.</small>
+                </button>
+                <button class="algorithm-card" data-disk-algo="sstf">
+                    <strong>SSTF</strong>
+                    <small>Always service the closest request to the head.</small>
+                </button>
+                <button class="algorithm-card" data-disk-algo="scan">
+                    <strong>SCAN</strong>
+                    <small>Sweep toward higher tracks, then reverse.</small>
+                </button>
+                <button class="algorithm-card" data-disk-algo="cscan">
+                    <strong>C-SCAN</strong>
+                    <small>Sweep up, jump back to 0, then continue up.</small>
+                </button>
+                <button class="algorithm-card" data-disk-algo="look">
+                    <strong>LOOK</strong>
+                    <small>Like SCAN, but reverses at the last request.</small>
+                </button>
+            </div>
+
+            <button id="diskAlgoBackButton" class="small-button">BACK</button>
+        </div>
+    </section>
+
