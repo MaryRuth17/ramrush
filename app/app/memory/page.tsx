@@ -360,7 +360,7 @@ export default function MemoryPage() {
             <small className="topic-desc">Step-by-step memory allocation visualiser</small>
           </button>
         </div>
-        <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => router.push('/')}>← BACK</button></div>
+        <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← BACK</button></div>
       </div>
     </div>
   );
@@ -493,7 +493,7 @@ export default function MemoryPage() {
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
         <header className="game-header">
           <div><h1>MEMORY ALLOCATION</h1><p>{getAlgorithmLabel(algorithm)} — SIMULATION</p></div>
-          <button className="btn btn-sm" onClick={() => router.push('/')}>EXIT</button>
+          <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>EXIT</button>
         </header>
         <main className="simulation-layout">
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -569,7 +569,7 @@ export default function MemoryPage() {
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
         <header className="game-header">
           <div><h1>MEMORY ALLOCATION</h1><p>{getAlgorithmLabel(algorithm)} — PLAY ({stage.toUpperCase()})</p></div>
-          <button className="btn btn-sm" onClick={() => router.push('/')}>EXIT</button>
+          <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>EXIT</button>
         </header>
         <main className="play-layout">
           {/* Left: status */}
@@ -655,7 +655,7 @@ export default function MemoryPage() {
             {playDone && (
               <>
                 <button id="memPlayRestart" className="btn" onClick={() => startPlay(algorithm)}>PLAY AGAIN</button>
-                <button id="memPlayExit" className="btn btn-sm" onClick={() => router.push('/')}>← MENU</button>
+                <button id="memPlayExit" className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← MENU</button>
               </>
             )}
           </section>

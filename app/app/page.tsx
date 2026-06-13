@@ -2,8 +2,8 @@
 
 // app/page.tsx — Opening screen + Topic Select (client component)
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type Screen = 'opening' | 'topic';
 
@@ -16,9 +16,16 @@ const BOOT_LINES = [
   '> DISK CONTROLLER READY',
 ];
 
-export default function HomePage() {
-  const [screen, setScreen] = useState<Screen>('opening');
+function HomeContent() {
+  const searchParams = useSearchParams();
+  const [screen, setScreen] = useState<Screen>(searchParams.get('topic') === 'true' ? 'topic' : 'opening');
   const router = useRouter();
+
+  useEffect(() => {
+    if (searchParams.get('topic') === 'true') {
+      setScreen('topic');
+    }
+  }, [searchParams]);
 
   return (
     <div
@@ -26,20 +33,30 @@ export default function HomePage() {
         minHeight: '100vh',
         background: 'radial-gradient(circle at center, #111a35, #050816 65%)',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
         padding: 'clamp(10px, 2vw, 20px)',
       }}
     >
-      {screen === 'opening' ? (
-        <OpeningScreen onStart={() => setScreen('topic')} />
-      ) : (
-        <TopicSelectScreen
-          onBack={() => setScreen('opening')}
-          onSelectTopic={(topic) => router.push(`/${topic}`)}
-        />
-      )}
+      <div style={{ margin: 'auto 0', width: '100%', display: 'flex', justifyContent: 'center' }}>
+        {screen === 'opening' ? (
+          <OpeningScreen onStart={() => setScreen('topic')} />
+        ) : (
+          <TopicSelectScreen
+            onBack={() => setScreen('opening')}
+            onSelectTopic={(topic) => router.push(`/${topic}`)}
+          />
+        )}
+      </div>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#050816' }}></div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
 
@@ -159,11 +176,10 @@ function TopicSelectScreen({
       style={{
         maxWidth: 900,
         width: '100%',
-        minHeight: 'calc(100vh - 40px)',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
         gap: 24,
+        padding: '20px 0',
       }}
     >
       <h1

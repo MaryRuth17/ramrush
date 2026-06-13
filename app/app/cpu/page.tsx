@@ -248,7 +248,7 @@ export default function CpuPage() {
 
   /* ── RENDER ───────────────────────────────────────────────── */
   if (screen === 'modeSelect') {
-    return <ModeSelect onBack={() => router.push('/')} onSelectMode={(m) => { setMode(m); setScreen('algoSelect'); }} />;
+    return <ModeSelect onBack={() => router.push('/?topic=true')} onSelectMode={(m) => { setMode(m); setScreen('algoSelect'); }} />;
   }
 
   if (screen === 'algoSelect') {
@@ -284,7 +284,7 @@ export default function CpuPage() {
         onStep={() => simStep(gantt, revealed)}
         onToggleAuto={toggleAuto}
         onRestart={() => startSimulation(algorithm)}
-        onExit={() => router.push('/')}
+        onExit={() => router.push('/?topic=true')}
       />
     );
   }
@@ -314,7 +314,7 @@ export default function CpuPage() {
         onProcessClick={(name) => handleProcessClick(name, currentTime, completedNames)}
         onTimeout={() => handleTimeout(currentTime, completedNames)}
         onRestart={() => startPlay(algorithm)}
-        onExit={() => router.push('/')}
+        onExit={() => router.push('/?topic=true')}
       />
     );
   }

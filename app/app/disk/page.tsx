@@ -259,7 +259,7 @@ export default function DiskPage() {
             <small className="topic-desc">Step-by-step disk head movement visualiser</small>
           </button>
         </div>
-        <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => router.push('/')}>← BACK</button></div>
+        <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← BACK</button></div>
       </div>
     </div>
   );
@@ -329,7 +329,7 @@ export default function DiskPage() {
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
         <header className="game-header">
           <div><h1>DISK SCHEDULING</h1><p>{getDiskAlgoLabel(algorithm)} — SIMULATION</p></div>
-          <button className="btn btn-sm" onClick={() => router.push('/')}>EXIT</button>
+          <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>EXIT</button>
         </header>
         <main className="simulation-layout">
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -423,7 +423,7 @@ export default function DiskPage() {
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
         <header className="game-header">
           <div><h1>DISK SCHEDULING</h1><p>{getDiskAlgoLabel(algorithm)} — PLAY MODE</p></div>
-          <button className="btn btn-sm" onClick={() => router.push('/')}>EXIT</button>
+          <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>EXIT</button>
         </header>
         <main className="play-layout">
           <section className="panel">
@@ -501,7 +501,7 @@ export default function DiskPage() {
             {playDone && (
               <>
                 <button className="btn" onClick={() => startPlay(algorithm)}>PLAY AGAIN</button>
-                <button className="btn btn-sm" onClick={() => router.push('/')}>← MENU</button>
+                <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← MENU</button>
               </>
             )}
           </section>
