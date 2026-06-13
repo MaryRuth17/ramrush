@@ -1,0 +1,66 @@
+// prisma/schema.prisma — RAM Rush isolated Prisma models (SQLite, no cloud)
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ── MEMORY ALLOCATION ─────────────────────────────────────────────────────────
+model MemorySession {
+  id          Int      @id @default(autoincrement())
+  algorithm   String
+  stageType   String?
+  mode        String
+  score       Int      @default(0)
+  hearts      Int      @default(4)
+  processed   Int      @default(0)
+  unprocessed Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+// ── CPU SCHEDULING ────────────────────────────────────────────────────────────
+model CpuSession {
+  id             Int      @id @default(autoincrement())
+  algorithm      String
+  mode           String
+  avgWaitingTime Float?
+  avgTurnaround  Float?
+  score          Int      @default(0)
+  hearts         Int      @default(4)
+  inputProcesses String?
+  quantum        Int      @default(2)
+  createdAt      DateTime @default(now())
+}
+
+// ── VIRTUAL MEMORY ────────────────────────────────────────────────────────────
+model VmSession {
+  id             Int      @id @default(autoincrement())
+  algorithm      String
+  mode           String
+  totalRefs      Int
+  pageFaults     Int
+  hits           Int
+  hitRatio       Float
+  score          Int      @default(0)
+  hearts         Int      @default(4)
+  inputRefString String?
+  frameCount     Int      @default(3)
+  createdAt      DateTime @default(now())
+}
+
+// ── DISK SCHEDULING ───────────────────────────────────────────────────────────
+model DiskSession {
+  id            Int      @id @default(autoincrement())
+  algorithm     String
+  mode          String
+  headStart     Int      @default(53)
+  totalMovement Int
+  score         Int      @default(0)
+  hearts        Int      @default(4)
+  inputRequests String?
+  createdAt     DateTime @default(now())
+}
