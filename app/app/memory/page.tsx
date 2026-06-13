@@ -22,7 +22,7 @@ import type { MemoryAlgorithm, MemoryBlock, MemoryProcess } from '@/lib/memory/t
 import type { BreakdownStep } from '@/lib/memory/breakdown';
 
 type Screen = 'modeSelect' | 'stageSelect' | 'algoSelect' | 'play' | 'simulation';
-const MAX_HEARTS = 4;
+const MAX_HEARTS = 3;
 const TIME_LIMIT = 5;
 
 const DEFAULT_MEMORY: MemoryBlock[] = [
@@ -336,13 +336,7 @@ export default function MemoryPage() {
   }
 
   async function saveMemPlay(s: number, h: number, blocks: MemoryBlock[], proc: number) {
-    try {
-      await fetch('/api/memory/play', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ algorithm, stageType: stage, score: s, hearts: h, processed: proc, unprocessed: 0 }),
-      });
-    } catch { /* silent */ }
+    // Database saving has been disabled as requested
   }
 
   /* ── RENDER ───────────────────────────────────────────────── */

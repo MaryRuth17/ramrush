@@ -21,7 +21,7 @@ import type { VmAlgorithm, VmSimResult, VmStepState } from '@/lib/vm/types';
 import type { BreakdownStep } from '@/lib/vm/breakdown';
 
 type Screen = 'modeSelect' | 'algoSelect' | 'simulation' | 'play';
-const MAX_HEARTS = 4;
+const MAX_HEARTS = 3;
 const TIME_LIMIT = 5;
 
 export default function VmPage() {
@@ -146,6 +146,10 @@ export default function VmPage() {
     setTimerRunning(true);
     setPlayMessage('Process the next page reference!');
     setScreen('play');
+
+    setTimeout(() => {
+      advancePlayStep(new Array(fc).fill(null), [], new Array(fc).fill(-1), 0, 0, 0, [], MAX_HEARTS, 0);
+    }, 600);
   }
 
   function advancePlayStep(
@@ -286,13 +290,7 @@ export default function VmPage() {
   }
 
   async function saveVmPlay(s: number, h: number, faults: number, hits: number, total: number) {
-    try {
-      await fetch('/api/vm/play', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ algorithm, score: s, hearts: h, pageFaults: faults, hits, totalRefs: total, hitRatio: hits / total, frameCount: activeFrames() }),
-      });
-    } catch { /* silent */ }
+    // Database saving has been disabled as requested
   }
 
   /* ── RENDER ───────────────────────────────────────────────── */

@@ -23,7 +23,7 @@ import type { BreakdownStep } from '@/lib/cpu/breakdown';
 
 type Screen = 'modeSelect' | 'algoSelect' | 'play' | 'simulation';
 
-const MAX_HEARTS = 4;
+const MAX_HEARTS = 3;
 const TIME_LIMIT = 5;
 
 const DEFAULT_PROCESSES_COPY: CpuProcess[] = DEFAULT_CPU_PROCESSES.map(p => ({ ...p }));
@@ -237,13 +237,7 @@ export default function CpuPage() {
   }
 
   async function savePlaySession(finalScore: number, finalHearts: number) {
-    try {
-      await fetch('/api/cpu/play', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ algorithm, score: finalScore, hearts: finalHearts, quantum }),
-      });
-    } catch { /* silent */ }
+    // Database saving has been disabled as requested
   }
 
   /* ── RENDER ───────────────────────────────────────────────── */

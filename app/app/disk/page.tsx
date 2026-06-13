@@ -22,7 +22,7 @@ import type { DiskAlgorithm, DiskSimResult } from '@/lib/disk/types';
 import type { BreakdownStep } from '@/lib/disk/breakdown';
 
 type Screen = 'modeSelect' | 'algoSelect' | 'simulation' | 'play';
-const MAX_HEARTS = 4;
+const MAX_HEARTS = 3;
 const TIME_LIMIT = 5;
 
 export default function DiskPage() {
@@ -235,13 +235,7 @@ export default function DiskPage() {
   }
 
   async function saveDiskPlay(s: number, h: number, moved: number) {
-    try {
-      await fetch('/api/disk/play', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ algorithm, score: s, hearts: h, headStart: activeHead(), totalMovement: moved }),
-      });
-    } catch { /* silent */ }
+    // Database saving has been disabled as requested
   }
 
   /* ── RENDER ───────────────────────────────────────────────── */
