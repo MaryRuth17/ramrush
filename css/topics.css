@@ -1,0 +1,149 @@
+/* =============================================================
+   [CSS-17] TOPIC SELECT SCREEN
+   Reuses .mode-card styling via .topic-card.
+============================================================== */
+#topicScreen .mode-card-grid {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+}
+
+/* =============================================================
+   [CSS-18] CPU SCHEDULING — GANTT CHART
+============================================================== */
+.gantt-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.gantt-block {
+    border: 3px solid var(--cyan);
+    background: var(--terminal-black);
+    padding: 10px 12px;
+    text-align: center;
+    min-width: 76px;
+}
+
+.gantt-block strong {
+    display: block;
+    color: var(--yellow);
+    font-size: 17px;
+}
+
+.gantt-block span {
+    display: block;
+    color: var(--white);
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* =============================================================
+   [CSS-19] RESULTS TABLES (CPU / VM / DISK)
+============================================================== */
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+}
+
+.results-table th,
+.results-table td {
+    border: 1px solid var(--border);
+    padding: 6px 8px;
+    text-align: center;
+    font-size: 13px;
+}
+
+.results-table th {
+    color: var(--yellow);
+    background: var(--panel-mid);
+}
+
+.results-table td {
+    color: var(--white);
+}
+
+/* =============================================================
+   [CSS-20] VIRTUAL MEMORY — REFERENCE STRING + FRAMES
+============================================================== */
+.ref-cell {
+    border: 2px solid var(--border);
+    background: var(--terminal-black);
+    padding: 10px;
+    text-align: center;
+    font-size: 17px;
+    font-weight: bold;
+    color: var(--white);
+    min-height: auto;
+}
+
+.ref-cell.hit {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.ref-cell.fault {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.ref-cell.current {
+    outline: 3px solid var(--yellow);
+}
+
+.vm-frame.empty {
+    background: var(--panel-mid);
+    color: #b8c7ff;
+}
+
+.vm-frame.filled {
+    background: var(--cyan);
+    color: var(--dark);
+}
+
+/* =============================================================
+   [CSS-21] DISK SCHEDULING — TRACK LINE
+============================================================== */
+.disk-line {
+    position: relative;
+    height: 70px;
+    border: 2px solid var(--border);
+    background: var(--terminal-black);
+    margin-top: 10px;
+    overflow: hidden;
+}
+
+.disk-mark {
+    position: absolute;
+    top: 18px;
+    width: 2px;
+    height: calc(100% - 18px);
+    background: var(--violet);
+}
+
+.disk-mark span {
+    position: absolute;
+    top: -20px;
+    left: -10px;
+    font-size: 11px;
+    color: var(--white);
+    white-space: nowrap;
+}
+
+.disk-mark.visited {
+    background: var(--success);
+}
+
+.disk-head {
+    position: absolute;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--pink);
+    transition: left 0.4s linear;
+}
+
+.order-card.visited {
+    border-color: var(--success);
+    background: #173322;
+}
+

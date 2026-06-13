@@ -1,0 +1,362 @@
+/* =============================================================
+   [CSS-09] PLAY AND SIMULATION LAYOUTS
+============================================================== */
+.play-layout {
+    width: min(1400px, 100%);
+    margin: auto;
+    display: grid;
+    grid-template-columns: minmax(190px, 250px) minmax(0, 1fr) minmax(210px, 280px);
+    gap: 14px;
+}
+
+.simulation-layout {
+    width: min(1200px, 100%);
+    margin: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(210px, 280px);
+    gap: 14px;
+}
+
+.panel {
+    background: var(--panel-dark);
+    border: 3px solid var(--border);
+    padding: 14px;
+    min-width: 0;
+}
+
+.panel h2 {
+    margin: 0 0 12px;
+    color: var(--cyan);
+    border-bottom: 2px solid var(--pink);
+    padding-bottom: 8px;
+}
+
+.center-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* =============================================================
+   [CSS-10] STATUS PANEL
+============================================================== */
+.stat-block {
+    border-left: 4px solid var(--pink);
+    background: rgba(255,255,255,0.05);
+    padding: 10px;
+    margin-bottom: 12px;
+}
+
+.stat-block span {
+    display: block;
+    color: #b8c7ff;
+    font-size: 13px;
+}
+
+.stat-block strong {
+    display: block;
+    color: var(--yellow);
+    font-size: 20px;
+    margin-top: 5px;
+}
+
+#heartDisplay {
+    color: var(--pink);
+    letter-spacing: 3px;
+}
+
+/* =============================================================
+   [CSS-11] CURRENT PROCESS AND TIMER
+============================================================== */
+.current-process-box,
+.timer-box {
+    border: 3px solid var(--cyan);
+    background: var(--terminal-black);
+    padding: 12px;
+    text-align: center;
+}
+
+.current-process-box span,
+.timer-box span {
+    display: block;
+    color: #b8c7ff;
+    margin-bottom: 5px;
+}
+
+.current-process-box strong {
+    display: block;
+    color: var(--yellow);
+    font-size: clamp(20px, 3vw, 30px);
+}
+
+.timer-box strong {
+    display: block;
+    color: var(--pink);
+    font-size: clamp(26px, 4vw, 42px);
+}
+
+.timer-bar-shell {
+    width: 100%;
+    height: 16px;
+    margin-top: 8px;
+    border: 2px solid var(--white);
+    background: #02030a;
+}
+
+.timer-bar-fill {
+    width: 100%;
+    height: 100%;
+    background: var(--success);
+    transition: width 0.1s linear;
+}
+
+/* =============================================================
+   [CSS-12] PROCESS QUEUE
+   The queue is now visible in the middle of the screen.
+============================================================== */
+.queue-section,
+.memory-section {
+    border: 2px solid var(--border);
+    padding: 12px;
+    background: rgba(255,255,255,0.03);
+}
+
+.queue-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.queue-card {
+    border: 2px solid var(--violet);
+    background: var(--terminal-black);
+    padding: 10px;
+    min-height: 84px;
+}
+
+.queue-card.active-queue-card {
+    border-color: var(--yellow);
+    background: #17213c;
+}
+
+.queue-card strong {
+    display: block;
+    color: var(--pink);
+    margin-bottom: 5px;
+}
+
+.queue-card span {
+    color: var(--white);
+}
+
+/* =============================================================
+   [CSS-13] MEMORY BLOCKS
+   These are intentionally simple so you can replace them with
+   pixel assets later.
+
+   To use assets later, add:
+   .memory-block.free { background-image: url('assets/free_block.png'); }
+   .memory-block.used { background-image: url('assets/used_block.png'); }
+============================================================== */
+.memory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+    gap: 10px;
+}
+
+.memory-block {
+    min-height: 110px;
+    border: 3px solid var(--white);
+    padding: 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    cursor: pointer;
+    image-rendering: pixelated;
+}
+
+.memory-block:hover {
+    outline: 4px solid var(--yellow);
+}
+
+.memory-block.free {
+    background: var(--cyan);
+    color: var(--dark);
+}
+
+.memory-block.used {
+    background: var(--pink);
+    color: var(--white);
+}
+
+.memory-block strong {
+    display: block;
+    font-size: 19px;
+}
+
+.memory-block span {
+    display: block;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.memory-block.correct-flash {
+    outline: 6px solid var(--success);
+}
+
+.memory-block.wrong-flash {
+    outline: 6px solid var(--danger);
+}
+
+/* =============================================================
+   [CSS-14] CONTROLS AND MESSAGES
+============================================================== */
+.rule-box,
+.message-box {
+    border: 2px solid var(--cyan);
+    background: var(--terminal-black);
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.rule-box span {
+    color: var(--yellow);
+    font-weight: bold;
+}
+
+.rule-box p,
+.message-box {
+    color: var(--white);
+    line-height: 1.35;
+}
+
+/* =============================================================
+   [CSS-15] MODALS
+   Used for compaction alert and end-game results.
+============================================================== */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(0,0,0,0.78);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+}
+
+.hidden {
+    display: none;
+}
+
+.modal-card {
+    width: min(95vw, 720px);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--panel-dark);
+    border: 4px solid var(--yellow);
+    padding: 22px;
+    box-shadow: 8px 8px 0 #02030a;
+}
+
+.modal-card h2 {
+    margin-top: 0;
+    color: var(--yellow);
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(18px, 3vw, 28px);
+}
+
+.modal-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.modal-buttons button {
+    flex: 1 1 180px;
+}
+
+.results-summary {
+    border: 2px solid var(--cyan);
+    padding: 12px;
+    margin-bottom: 14px;
+    background: var(--terminal-black);
+}
+
+.result-lists {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.result-list-box {
+    min-height: 130px;
+    border: 2px solid var(--border);
+    padding: 10px;
+    background: var(--terminal-black);
+    line-height: 1.4;
+}
+
+.result-item {
+    padding: 6px 0;
+    border-bottom: 1px solid #25375e;
+}
+
+/* =============================================================
+   [CSS-16] RESPONSIVE DESIGN
+   Fixes cutting on small screens.
+============================================================== */
+@media (max-width: 1050px) {
+    .play-layout,
+    .simulation-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .status-panel,
+    .controls-panel {
+        order: 2;
+    }
+
+    .center-panel {
+        order: 1;
+    }
+}
+
+@media (max-width: 720px) {
+    .mode-card-grid,
+    .algorithm-card-grid,
+    .result-lists {
+        grid-template-columns: 1fr;
+    }
+
+    .game-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .memory-grid {
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    }
+
+    .memory-block {
+        min-height: 95px;
+        padding: 8px;
+    }
+}
+
+@media (max-width: 420px) {
+    .screen {
+        padding: 8px;
+    }
+
+    .title-area h1 {
+        font-size: 24px;
+    }
+
+    .queue-row {
+        grid-template-columns: 1fr;
+    }
+}
+

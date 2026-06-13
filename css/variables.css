@@ -1,0 +1,20 @@
+/* =============================================================
+   [CSS-02] COLOR PALETTE
+   Edit these variables to quickly recolor the whole game.
+============================================================== */
+:root {
+    --dark: #050816;
+    --terminal-black: #09111f;
+    --panel-dark: #10162f;
+    --panel-mid: #151b36;
+    --purple: #231942;
+    --violet: #7b2cbf;
+    --cyan: #05d9e8;
+    --pink: #ff2a6d;
+    --yellow: #f9f871;
+    --white: #f8f8ff;
+    --danger: #ff1744;
+    --success: #49ff9f;
+    --border: #2f6f8f;
+}
+
