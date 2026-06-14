@@ -16,7 +16,7 @@ model MemorySession {
   stageType   String?
   mode        String
   score       Int      @default(0)
-  hearts      Int      @default(4)
+  hearts      Int      @default(3)
   processed   Int      @default(0)
   unprocessed Int      @default(0)
   createdAt   DateTime @default(now())

@@ -20,16 +20,44 @@ import {
 import { generateDiskBreakdown } from '@/lib/disk/breakdown';
 import type { DiskAlgorithm, DiskSimResult } from '@/lib/disk/types';
 import type { BreakdownStep } from '@/lib/disk/breakdown';
+import { MAX_HEARTS, TIMER_BY_DIFFICULTY } from '@/lib/game/constants';
+import { DifficultySelect } from '@/components/ui/DifficultySelect';
 
-type Screen = 'modeSelect' | 'algoSelect' | 'simulation' | 'play';
-const MAX_HEARTS = 4;
-const TIME_LIMIT = 5;
+type Screen = 'modeSelect' | 'algoSelect' | 'simulation' | 'play' | 'stageSelect';
+
+const DISK_SETS: Record<'easy' | 'normal' | 'hard', { requests: number[]; headStart: number }[]> = {
+  easy: [
+    // Set A — classic textbook example, head near low end
+    { requests: [98, 183, 37, 122, 14], headStart: 53 },
+    // Set B — head in middle, symmetric spread; SSTF vs SCAN diverge
+    { requests: [45, 100, 180, 20, 130], headStart: 80 },
+    // Set C — head near start, large jump visible with FCFS
+    { requests: [30, 170, 60, 150, 90], headStart: 10 },
+  ],
+  normal: [
+    // Set A — 8 requests from textbook, head at 53
+    { requests: [98, 183, 37, 122, 14, 124, 65, 67], headStart: 53 },
+    // Set B — head at high end, cluster + outlier; SSTF saves dramatically vs FCFS
+    { requests: [176, 79, 34, 60, 92, 11, 41, 114], headStart: 100 },
+    // Set C — tight cluster near head plus two distant requests
+    { requests: [55, 58, 39, 18, 90, 160, 150, 38], headStart: 45 },
+  ],
+  hard: [
+    // Set A — 11 requests including boundary extremes (5, 183, 170)
+    { requests: [98, 183, 37, 122, 14, 124, 65, 67, 170, 5, 88], headStart: 53 },
+    // Set B — dense cluster in 77–177 range; C-SCAN wrap visible
+    { requests: [86, 147, 91, 177, 94, 150, 102, 175, 130, 77, 121], headStart: 143 },
+    // Set C — alternating sides of disk; emphasises LOOK reversal efficiency
+    { requests: [22, 116, 42, 178, 56, 134, 74, 168, 96, 12, 158], headStart: 75 },
+  ],
+};
 
 export default function DiskPage() {
   const router = useRouter();
   const [screen, setScreen] = useState<Screen>('modeSelect');
   const [mode, setMode] = useState<'play' | 'simulation'>('simulation');
   const [algorithm, setAlgorithm] = useState<DiskAlgorithm>('fcfs');
+  const [stage, setStage] = useState<'easy' | 'normal' | 'hard'>('normal');
 
   // Custom input
   const [customRequests, setCustomRequests] = useState(DEFAULT_DISK_REQUESTS.join(', '));
@@ -129,8 +157,10 @@ export default function DiskPage() {
   /* ── PLAY ─────────────────────────────────────────────────── */
   function startPlay(algo: DiskAlgorithm) {
     setAlgorithm(algo);
-    const reqs = activeRequests();
-    const head = activeHead();
+    const sets = DISK_SETS[stage];
+    const chosen = sets[Math.floor(Math.random() * sets.length)];
+    const reqs = [...chosen.requests];
+    const head = chosen.headStart;
     const order = computeDiskOrder(algo, reqs, head);
     setPlayRequests(reqs);
     setPlayOrder(order);
@@ -250,7 +280,7 @@ export default function DiskPage() {
       <div style={{ maxWidth: 700, width: '100%', padding: 24 }}>
         <h1 className="font-pixel" style={{ color: 'var(--yellow)', textAlign: 'center', fontSize: 'clamp(18px,3vw,32px)', marginBottom: 32 }}>DISK SCHEDULING</h1>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px,1fr))', gap: 18, marginBottom: 24 }}>
-          <button id="diskPlayMode" className="topic-card cyan-card" onClick={() => { setMode('play'); setScreen('algoSelect'); }}>
+          <button id="diskPlayMode" className="topic-card cyan-card" onClick={() => { setMode('play'); setScreen('stageSelect'); }}>
             <span className="topic-icon">▶</span><strong className="topic-title">PLAY</strong>
             <small className="topic-desc">Timed — click the correct next disk track mark</small>
           </button>
@@ -262,6 +292,19 @@ export default function DiskPage() {
         <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← BACK</button></div>
       </div>
     </div>
+  );
+
+  if (screen === 'stageSelect') return (
+    <DifficultySelect
+      title="DISK SCHEDULING"
+      onSelect={d => { setStage(d); setScreen('algoSelect'); }}
+      onBack={() => setScreen('modeSelect')}
+      descriptions={{
+        easy:   `5 track requests · ${TIMER_BY_DIFFICULTY.easy}s per step`,
+        normal: `8 track requests · ${TIMER_BY_DIFFICULTY.normal}s per step`,
+        hard:   `11 track requests · ${TIMER_BY_DIFFICULTY.hard}s per step`,
+      }}
+    />
   );
 
   if (screen === 'algoSelect') {
@@ -439,7 +482,7 @@ export default function DiskPage() {
             {!playDone && (
               <TimerBar
                 key={timerKey}
-                seconds={TIME_LIMIT}
+                seconds={TIMER_BY_DIFFICULTY[stage]}
                 running={timerRunning}
                 onExpire={() => handleDiskTimeout(playStep, playVisited, playHead, totalMoved, hearts, score)}
               />

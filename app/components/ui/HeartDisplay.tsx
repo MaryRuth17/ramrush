@@ -1,20 +1,34 @@
 'use client';
 
-// components/ui/HeartDisplay.tsx — Heart life display
+// components/ui/HeartDisplay.tsx — Heart life display with loss animation
+
+import { useEffect, useRef, useState } from 'react';
 
 interface HeartDisplayProps {
   hearts: number;
   maxHearts: number;
 }
 
-export function HeartDisplay({ hearts, maxHearts }: HeartDisplayProps) {
+export function HeartDisplay({ hearts, maxHearts: _ }: HeartDisplayProps) {
+  const prevHearts = useRef(hearts);
+  const [animatingOut, setAnimatingOut] = useState(false);
+
+  useEffect(() => {
+    if (hearts < prevHearts.current) {
+      setAnimatingOut(true);
+      const t = setTimeout(() => setAnimatingOut(false), 600);
+      prevHearts.current = hearts;
+      return () => clearTimeout(t);
+    }
+    prevHearts.current = hearts;
+  }, [hearts]);
+
   return (
-    <div style={{ fontSize: 22, letterSpacing: 4 }}>
-      {Array.from({ length: maxHearts }, (_, i) => (
-        <span key={i} className={i < hearts ? 'heart-full' : 'heart-empty'}>
-          ♥
-        </span>
+    <div style={{ fontSize: 30, letterSpacing: 4 }}>
+      {Array.from({ length: hearts }, (_, i) => (
+        <span key={i} className="heart-full">♥</span>
       ))}
+      {animatingOut && <span className="heart-losing">♥</span>}
     </div>
   );
 }

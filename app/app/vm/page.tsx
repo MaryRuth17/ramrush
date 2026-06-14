@@ -19,16 +19,44 @@ import {
 import { generateVmBreakdown } from '@/lib/vm/breakdown';
 import type { VmAlgorithm, VmSimResult, VmStepState } from '@/lib/vm/types';
 import type { BreakdownStep } from '@/lib/vm/breakdown';
+import { MAX_HEARTS, TIMER_BY_DIFFICULTY } from '@/lib/game/constants';
+import { DifficultySelect } from '@/components/ui/DifficultySelect';
 
-type Screen = 'modeSelect' | 'algoSelect' | 'simulation' | 'play';
-const MAX_HEARTS = 4;
-const TIME_LIMIT = 5;
+type Screen = 'modeSelect' | 'algoSelect' | 'simulation' | 'play' | 'stageSelect';
+
+const VM_SETS: Record<'easy' | 'normal' | 'hard', { refString: number[]; frames: number }[]> = {
+  easy: [
+    // Set A — two hits at end after frames fill up
+    { refString: [1, 2, 3, 4, 1, 2], frames: 3 },
+    // Set B — hit in the middle before frames are full (page 1 hits at pos 2)
+    { refString: [1, 2, 1, 3, 2, 4], frames: 3 },
+    // Set C — page 3 is a hit, then fault wave, then page 2 hits late
+    { refString: [3, 2, 1, 3, 4, 2], frames: 3 },
+  ],
+  normal: [
+    // Set A — Silberschatz classic (FIFO=15, LRU=12, OPT=9 faults)
+    { refString: [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1], frames: 3 },
+    // Set B — shows Bélády's anomaly for FIFO with 4 frames; interesting FIFO vs LRU divergence
+    { refString: [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 6, 7, 8], frames: 3 },
+    // Set C — mixed locality with decent hit rate
+    { refString: [0, 1, 2, 0, 3, 1, 2, 4, 0, 3, 1, 5, 2, 0, 3, 4, 1, 2, 5, 0], frames: 3 },
+  ],
+  hard: [
+    // Set A — varied locality, OPT saves ~4 faults vs FIFO
+    { refString: [2, 3, 2, 1, 5, 2, 4, 5, 3, 2, 5, 2, 0, 1, 5, 3, 4, 2, 1, 0, 3, 5, 2, 1], frames: 3 },
+    // Set B — high page count, low locality; algorithms diverge significantly
+    { refString: [0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 0, 1, 2, 4, 5, 0, 3, 4, 1, 2, 5, 3, 0, 1], frames: 3 },
+    // Set C — two distinct working sets that shift mid-sequence
+    { refString: [1, 2, 3, 1, 2, 3, 1, 2, 4, 5, 4, 5, 4, 0, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0], frames: 3 },
+  ],
+};
 
 export default function VmPage() {
   const router = useRouter();
   const [screen, setScreen] = useState<Screen>('modeSelect');
   const [mode, setMode] = useState<'play' | 'simulation'>('simulation');
   const [algorithm, setAlgorithm] = useState<VmAlgorithm>('fifo');
+  const [stage, setStage] = useState<'easy' | 'normal' | 'hard'>('normal');
 
   // Custom input
   const [customRefString, setCustomRefString] = useState(DEFAULT_VM_REFERENCE_STRING.join(' '));
@@ -128,8 +156,10 @@ export default function VmPage() {
   /* ── PLAY ─────────────────────────────────────────────────── */
   function startPlay(algo: VmAlgorithm) {
     setAlgorithm(algo);
-    const ref = activeRef();
-    const fc = activeFrames();
+    const sets = VM_SETS[stage];
+    const chosen = sets[Math.floor(Math.random() * sets.length)];
+    const ref = [...chosen.refString];
+    const fc = chosen.frames;
     setPlayRef(ref);
     setPlayFrames(new Array(fc).fill(null));
     setPlayFifoOrder([]);
@@ -301,7 +331,7 @@ export default function VmPage() {
       <div style={{ maxWidth: 700, width: '100%', padding: 24 }}>
         <h1 className="font-pixel" style={{ color: 'var(--yellow)', textAlign: 'center', fontSize: 'clamp(18px,3vw,32px)', marginBottom: 32 }}>VIRTUAL MEMORY</h1>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px,1fr))', gap: 18, marginBottom: 24 }}>
-          <button id="vmPlayMode" className="topic-card cyan-card" onClick={() => { setMode('play'); setScreen('algoSelect'); }}>
+          <button id="vmPlayMode" className="topic-card cyan-card" onClick={() => { setMode('play'); setScreen('stageSelect'); }}>
             <span className="topic-icon">▶</span><strong className="topic-title">PLAY</strong>
             <small className="topic-desc">Timed — click the correct victim frame to evict</small>
           </button>
@@ -313,6 +343,19 @@ export default function VmPage() {
         <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← BACK</button></div>
       </div>
     </div>
+  );
+
+  if (screen === 'stageSelect') return (
+    <DifficultySelect
+      title="VIRTUAL MEMORY"
+      onSelect={d => { setStage(d); setScreen('algoSelect'); }}
+      onBack={() => setScreen('modeSelect')}
+      descriptions={{
+        easy:   `6 page refs · ${TIMER_BY_DIFFICULTY.easy}s per choice`,
+        normal: `20 page refs · ${TIMER_BY_DIFFICULTY.normal}s per choice`,
+        hard:   `24 page refs · ${TIMER_BY_DIFFICULTY.hard}s per choice`,
+      }}
+    />
   );
 
   if (screen === 'algoSelect') {
@@ -466,7 +509,7 @@ export default function VmPage() {
 
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {!playDone && needsChoice && (
-              <TimerBar key={timerKey} seconds={TIME_LIMIT} running={timerRunning} onExpire={handlePlayTimeout} />
+              <TimerBar key={timerKey} seconds={TIMER_BY_DIFFICULTY[stage]} running={timerRunning} onExpire={handlePlayTimeout} />
             )}
             <div style={{ border: '2px solid var(--border)', padding: 12 }}>
               <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>REFERENCE STRING</h2>

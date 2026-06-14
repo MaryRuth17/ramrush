@@ -20,11 +20,91 @@ import {
 import { generateCpuBreakdown } from '@/lib/cpu/breakdown';
 import type { CpuAlgorithm, CpuProcess, GanttBlock, CpuStats } from '@/lib/cpu/types';
 import type { BreakdownStep } from '@/lib/cpu/breakdown';
+import { MAX_HEARTS, TIMER_BY_DIFFICULTY } from '@/lib/game/constants';
+import { DifficultySelect } from '@/components/ui/DifficultySelect';
 
-type Screen = 'modeSelect' | 'algoSelect' | 'play' | 'simulation';
+type Screen = 'modeSelect' | 'algoSelect' | 'play' | 'simulation' | 'stageSelect';
 
-const MAX_HEARTS = 4;
-const TIME_LIMIT = 5;
+const CPU_SETS: Record<'easy' | 'normal' | 'hard', CpuProcess[][]> = {
+  easy: [
+    // Set A — clear ordering, good for teaching
+    [
+      { name: 'P1', arrival: 0, burst: 4, priority: 2 },
+      { name: 'P2', arrival: 1, burst: 3, priority: 1 },
+      { name: 'P3', arrival: 2, burst: 5, priority: 3 },
+    ],
+    // Set B — SJF tie at t=0 (P1 and P2 equal burst, tiebreak by arrival/name)
+    [
+      { name: 'P1', arrival: 0, burst: 3, priority: 2 },
+      { name: 'P2', arrival: 0, burst: 3, priority: 1 },
+      { name: 'P3', arrival: 2, burst: 6, priority: 3 },
+    ],
+    // Set C — priority order inverts FCFS order
+    [
+      { name: 'P1', arrival: 0, burst: 5, priority: 1 },
+      { name: 'P2', arrival: 1, burst: 2, priority: 3 },
+      { name: 'P3', arrival: 3, burst: 4, priority: 2 },
+    ],
+  ],
+  normal: [
+    // Set A — varied burst, staggered arrivals
+    [
+      { name: 'P1', arrival: 0, burst: 5, priority: 3 },
+      { name: 'P2', arrival: 1, burst: 3, priority: 1 },
+      { name: 'P3', arrival: 2, burst: 8, priority: 4 },
+      { name: 'P4', arrival: 3, burst: 6, priority: 2 },
+      { name: 'P5', arrival: 4, burst: 4, priority: 5 },
+    ],
+    // Set B — P2 and P4 tie on burst=2 for SJF
+    [
+      { name: 'P1', arrival: 0, burst: 6, priority: 2 },
+      { name: 'P2', arrival: 2, burst: 2, priority: 4 },
+      { name: 'P3', arrival: 3, burst: 8, priority: 1 },
+      { name: 'P4', arrival: 4, burst: 2, priority: 3 },
+      { name: 'P5', arrival: 5, burst: 5, priority: 5 },
+    ],
+    // Set C — priority vs SJF produce very different orders
+    [
+      { name: 'P1', arrival: 0, burst: 4, priority: 3 },
+      { name: 'P2', arrival: 1, burst: 7, priority: 1 },
+      { name: 'P3', arrival: 2, burst: 3, priority: 4 },
+      { name: 'P4', arrival: 3, burst: 6, priority: 2 },
+      { name: 'P5', arrival: 5, burst: 5, priority: 5 },
+    ],
+  ],
+  hard: [
+    // Set A — two processes arrive simultaneously at t=0
+    [
+      { name: 'P1', arrival: 0, burst: 6, priority: 4 },
+      { name: 'P2', arrival: 0, burst: 2, priority: 1 },
+      { name: 'P3', arrival: 1, burst: 8, priority: 3 },
+      { name: 'P4', arrival: 2, burst: 3, priority: 5 },
+      { name: 'P5', arrival: 3, burst: 5, priority: 2 },
+      { name: 'P6', arrival: 4, burst: 4, priority: 6 },
+      { name: 'P7', arrival: 5, burst: 7, priority: 1 },
+    ],
+    // Set B — multiple SJF ties, also P1 and P2 tie at t=0
+    [
+      { name: 'P1', arrival: 0, burst: 5, priority: 3 },
+      { name: 'P2', arrival: 0, burst: 5, priority: 1 },
+      { name: 'P3', arrival: 1, burst: 4, priority: 2 },
+      { name: 'P4', arrival: 2, burst: 4, priority: 4 },
+      { name: 'P5', arrival: 3, burst: 6, priority: 5 },
+      { name: 'P6', arrival: 4, burst: 3, priority: 2 },
+      { name: 'P7', arrival: 5, burst: 6, priority: 3 },
+    ],
+    // Set C — late simultaneous arrivals at t=6
+    [
+      { name: 'P1', arrival: 0, burst: 7, priority: 4 },
+      { name: 'P2', arrival: 0, burst: 3, priority: 2 },
+      { name: 'P3', arrival: 2, burst: 5, priority: 1 },
+      { name: 'P4', arrival: 3, burst: 4, priority: 3 },
+      { name: 'P5', arrival: 5, burst: 6, priority: 5 },
+      { name: 'P6', arrival: 6, burst: 2, priority: 2 },
+      { name: 'P7', arrival: 6, burst: 8, priority: 6 },
+    ],
+  ],
+};
 
 const DEFAULT_PROCESSES_COPY: CpuProcess[] = DEFAULT_CPU_PROCESSES.map(p => ({ ...p }));
 
@@ -33,6 +113,7 @@ export default function CpuPage() {
   const [screen, setScreen] = useState<Screen>('modeSelect');
   const [mode, setMode] = useState<'play' | 'simulation'>('simulation');
   const [algorithm, setAlgorithm] = useState<CpuAlgorithm>('fcfs');
+  const [stage, setStage] = useState<'easy' | 'normal' | 'hard'>('normal');
 
   // Custom process input
   const [customProcesses, setCustomProcesses] = useState<CpuProcess[]>(DEFAULT_PROCESSES_COPY);
@@ -144,7 +225,8 @@ export default function CpuPage() {
   /* ── PLAY MODE ────────────────────────────────────────────── */
   function startPlay(algo: CpuAlgorithm) {
     setAlgorithm(algo);
-    const procs = activeProcesses();
+    const sets = CPU_SETS[stage];
+    const procs = sets[Math.floor(Math.random() * sets.length)];
     setPlayProcesses(procs);
     setCompletedNames([]);
     setHearts(MAX_HEARTS);
@@ -348,7 +430,22 @@ export default function CpuPage() {
 
   /* ── RENDER ───────────────────────────────────────────────── */
   if (screen === 'modeSelect') {
-    return <ModeSelect onBack={() => router.push('/?topic=true')} onSelectMode={(m) => { setMode(m); setScreen('algoSelect'); }} />;
+    return <ModeSelect onBack={() => router.push('/?topic=true')} onSelectMode={(m) => { setMode(m); setScreen(m === 'play' ? 'stageSelect' : 'algoSelect'); }} />;
+  }
+
+  if (screen === 'stageSelect') {
+    return (
+      <DifficultySelect
+        title="CPU SCHEDULING"
+        descriptions={{
+          easy:   '3 processes · 8s timer',
+          normal: '5 processes · 5s timer',
+          hard:   '7 processes · 3s timer',
+        }}
+        onSelect={(d) => { setStage(d); setScreen('algoSelect'); }}
+        onBack={() => setScreen('modeSelect')}
+      />
+    );
   }
 
   if (screen === 'algoSelect') {
@@ -361,7 +458,7 @@ export default function CpuPage() {
         setQuantum={setQuantum}
         useCustom={useCustom}
         setUseCustom={setUseCustom}
-        onBack={() => setScreen('modeSelect')}
+        onBack={() => setScreen(mode === 'play' ? 'stageSelect' : 'modeSelect')}
         onSelect={(algo) => mode === 'simulation' ? startSimulation(algo) : startPlay(algo)}
       />
     );
@@ -413,6 +510,7 @@ export default function CpuPage() {
         flashWrong={flashWrong}
         rrRemaining={algorithm === 'rr' ? rrRemaining : undefined}
         rrQueue={algorithm === 'rr' ? rrQueue : undefined}
+        timerSeconds={TIMER_BY_DIFFICULTY[stage]}
         onProcessClick={(name) => handleProcessClick(name, currentTime, completedNames)}
         onTimeout={() => handleTimeout(currentTime, completedNames)}
         onRestart={() => startPlay(algorithm)}
@@ -708,7 +806,7 @@ function SimulationScreen({
 function PlayScreen({
   algorithm, processes, arrivedProcesses, completedNames, currentTime, hearts, score,
   playMessage, playDone, timerKey, timerRunning, correctAnswer, flashRight, flashWrong,
-  rrRemaining, rrQueue,
+  rrRemaining, rrQueue, timerSeconds,
   onProcessClick, onTimeout, onRestart, onExit,
 }: {
   algorithm: CpuAlgorithm; processes: CpuProcess[]; arrivedProcesses: CpuProcess[];
@@ -717,6 +815,7 @@ function PlayScreen({
   correctAnswer: string | null; flashRight: string | null; flashWrong: string | null;
   rrRemaining?: Record<string, number>;
   rrQueue?: string[];
+  timerSeconds: number;
   onProcessClick: (name: string) => void; onTimeout: () => void;
   onRestart: () => void; onExit: () => void;
 }) {
@@ -762,7 +861,7 @@ function PlayScreen({
         {/* Center: timer + process cards */}
         <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {!playDone && (
-            <TimerBar key={timerKey} seconds={TIME_LIMIT} running={timerRunning} onExpire={onTimeout} />
+            <TimerBar key={timerKey} seconds={timerSeconds} running={timerRunning} onExpire={onTimeout} />
           )}
 
           <div style={{ border: '2px solid var(--border)', padding: 12, background: 'rgba(255,255,255,0.03)' }}>
