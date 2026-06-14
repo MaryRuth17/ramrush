@@ -22,6 +22,7 @@ import type { MemoryAlgorithm, MemoryBlock, MemoryProcess } from '@/lib/memory/t
 import type { BreakdownStep } from '@/lib/memory/breakdown';
 import { MAX_HEARTS, TIMER_BY_DIFFICULTY } from '@/lib/game/constants';
 import { DifficultySelect } from '@/components/ui/DifficultySelect';
+import { GameHeader } from '@/components/ui/GameHeader';
 
 type Screen = 'modeSelect' | 'stageSelect' | 'algoSelect' | 'play' | 'simulation';
 
@@ -188,7 +189,9 @@ export default function MemoryPage() {
       const newUnproc = [...unproc, { ...process, reason }];
       setUnprocessed(newUnproc);
       setSimStep(newStep);
-      setSimMessage(`Cannot allocate ${process.name} (${process.size} MB) — no suitable block found.`);
+      const freeBlocks = newBlocks.filter(b => !b.used);
+      const largest = freeBlocks.length > 0 ? Math.max(...freeBlocks.map(b => b.size)) : 0;
+      setSimMessage(`Cannot allocate ${process.name} (${process.size} MB) — largest free block is only ${largest} MB. No block fits.`);
       if (newStep >= processes.length) {
         const bd = generateMemoryBreakdown(algo, newBlocks, history);
         setBreakdown(bd);
@@ -205,7 +208,21 @@ export default function MemoryPage() {
     setSimHistory(newHistory);
     setSimStep(newStep);
     setProcessed(newProc);
-    setSimMessage(`Allocated ${process.name} (${process.size} MB) → Block ${targetIdx + 1}. Leftover: ${leftover} MB.`);
+
+    let allocReason: string;
+    const freeEligible = newBlocks.map((b, i) => ({ b, i })).filter(({ b }) => !b.used && b.size >= process.size);
+    if (algo === 'firstFit') {
+      const skipped = newBlocks.slice(0, targetIdx).filter(b => !b.used && b.size < process.size).length;
+      const skipNote = skipped > 0 ? ` (${skipped} block(s) too small, skipped)` : '';
+      allocReason = `First Fit: scanning left to right${skipNote}. Block ${targetIdx + 1} (${newBlocks[targetIdx].size} MB) is first to fit ${process.name} (${process.size} MB). Leftover: ${leftover} MB.`;
+    } else if (algo === 'bestFit') {
+      const comparison = freeEligible.map(({ b, i }) => `B${i + 1}:${b.size}MB→${b.size - process.size}left`).join(', ');
+      allocReason = `Best Fit: all free blocks compared — [${comparison}]. Block ${targetIdx + 1} has smallest leftover (${leftover} MB) → allocated.`;
+    } else {
+      const comparison = freeEligible.map(({ b, i }) => `B${i + 1}:${b.size}MB`).join(', ');
+      allocReason = `Worst Fit: picks largest free block to maximise leftover. Eligible: [${comparison}]. Block ${targetIdx + 1} (${newBlocks[targetIdx].size} MB) is largest → ${process.name} allocated. Leftover: ${leftover} MB.`;
+    }
+    setSimMessage(allocReason);
 
     if (newStep >= processes.length) {
       const bd = generateMemoryBreakdown(algo, allocated, newHistory);
@@ -506,10 +523,7 @@ export default function MemoryPage() {
     const done = simStep >= processes.length;
     return (
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
-        <header className="game-header">
-          <div><h1>MEMORY ALLOCATION</h1><p>{getAlgorithmLabel(algorithm)} — SIMULATION</p></div>
-          <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>EXIT</button>
-        </header>
+        <GameHeader moduleName="MEMORY ALLOCATION" algorithmLabel={getAlgorithmLabel(algorithm)} modeLabel="SIMULATION" onExit={() => router.push('/?topic=true')} exitButtonId="memSimExit" />
         <main className="simulation-layout">
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ border: '2px solid var(--border)', padding: 12 }}>
@@ -582,10 +596,7 @@ export default function MemoryPage() {
     const correctIdx = currentProcess ? findTargetBlock(playBlocks, currentProcess, algorithm) : -1;
     return (
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
-        <header className="game-header">
-          <div><h1>MEMORY ALLOCATION</h1><p>{getAlgorithmLabel(algorithm)} — PLAY ({stage.toUpperCase()})</p></div>
-          <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>EXIT</button>
-        </header>
+        <GameHeader moduleName="MEMORY ALLOCATION" algorithmLabel={getAlgorithmLabel(algorithm)} modeLabel={`PLAY (${stage.toUpperCase()})`} onExit={() => router.push('/?topic=true')} exitButtonId="memPlayExit" />
         <main className="play-layout">
           {/* Left: status */}
           <section className="panel">

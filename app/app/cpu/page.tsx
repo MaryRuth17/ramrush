@@ -2,7 +2,7 @@
 
 // app/cpu/page.tsx — CPU Scheduling topic page (Play + Simulation + Custom Input)
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { TimerBar } from '@/components/ui/TimerBar';
 import { HeartDisplay } from '@/components/ui/HeartDisplay';
@@ -22,6 +22,7 @@ import type { CpuAlgorithm, CpuProcess, GanttBlock, CpuStats } from '@/lib/cpu/t
 import type { BreakdownStep } from '@/lib/cpu/breakdown';
 import { MAX_HEARTS, TIMER_BY_DIFFICULTY } from '@/lib/game/constants';
 import { DifficultySelect } from '@/components/ui/DifficultySelect';
+import { GameHeader } from '@/components/ui/GameHeader';
 
 type Screen = 'modeSelect' | 'algoSelect' | 'play' | 'simulation' | 'stageSelect';
 
@@ -121,6 +122,7 @@ export default function CpuPage() {
   const [useCustom, setUseCustom] = useState(false);
 
   // Simulation state
+  const autoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [gantt, setGantt] = useState<GanttBlock[]>([]);
   const [stats, setStats] = useState<CpuStats | null>(null);
   const [revealed, setRevealed] = useState(0);
@@ -153,6 +155,7 @@ export default function CpuPage() {
 
   /* ── SIMULATION MODE ──────────────────────────────────────── */
   function startSimulation(algo: CpuAlgorithm) {
+    if (autoIntervalRef.current) { clearInterval(autoIntervalRef.current); autoIntervalRef.current = null; }
     setAlgorithm(algo);
     const procs = activeProcesses();
     const g = computeCpuGantt(algo, procs, quantum);
@@ -181,7 +184,7 @@ export default function CpuPage() {
     const next = rev + 1;
     setRevealed(next);
     const block = g[next - 1];
-    setSimMessage(`${block.name} runs from time ${block.start} to ${block.end}.`);
+    setSimMessage(`${block.reason} Runs t=${block.start}–${block.end}.`);
     if (next === g.length) {
       const s = computeCpuStats(g, activeProcesses());
       setStats(s);
@@ -193,21 +196,18 @@ export default function CpuPage() {
   }
 
   function toggleAuto() {
-    if (autoRunning) { setAutoRunning(false); return; }
+    if (autoRunning) {
+      setAutoRunning(false);
+      if (autoIntervalRef.current) { clearInterval(autoIntervalRef.current); autoIntervalRef.current = null; }
+      return;
+    }
     setAutoRunning(true);
-    const run = () => {
-      setRevealed(prev => {
-        if (prev >= gantt.length) { setAutoRunning(false); return prev; }
-        simStep(gantt, prev);
-        return prev;
-      });
-    };
     const id = setInterval(() => {
       setRevealed(prev => {
         if (prev >= gantt.length) { clearInterval(id); setAutoRunning(false); return prev; }
         const next = prev + 1;
         const block = gantt[next - 1];
-        setSimMessage(`${block.name} runs from time ${block.start} to ${block.end}.`);
+        setSimMessage(`${block.reason} Runs t=${block.start}–${block.end}.`);
         if (next === gantt.length) {
           clearInterval(id);
           setAutoRunning(false);
@@ -220,6 +220,7 @@ export default function CpuPage() {
         return next;
       });
     }, 700);
+    autoIntervalRef.current = id;
   }
 
   /* ── PLAY MODE ────────────────────────────────────────────── */
@@ -344,13 +345,18 @@ export default function CpuPage() {
         setCompletedNames(nextDone);
         setCurrentTime(nextTime);
         setPlayMessage(`✓ Correct! ${name} runs next under ${getCpuAlgoLabel(algorithm)}.`);
-        const remaining = playProcesses.filter(p => !nextDone.includes(p.name) && p.arrival <= nextTime);
-        if (nextDone.length >= playProcesses.length || remaining.length === 0) {
+        if (nextDone.length >= playProcesses.length) {
           setPlayDone(true);
           setTimerRunning(false);
           setPlayMessage('All processes scheduled! Run complete.');
           savePlaySession(score + 10, hearts);
         } else {
+          // Auto-advance currentTime past idle gap if no process has arrived yet
+          const arrivedNow = playProcesses.filter(p => !nextDone.includes(p.name) && p.arrival <= nextTime);
+          if (arrivedNow.length === 0) {
+            const nextArrival = Math.min(...playProcesses.filter(p => !nextDone.includes(p.name)).map(p => p.arrival));
+            setCurrentTime(nextArrival);
+          }
           setTimeout(() => { setTimerKey(k => k + 1); setTimerRunning(true); setPlayMessage('Click the process that should run next!'); }, 700);
         }
       }
@@ -705,13 +711,7 @@ function SimulationScreen({
 }) {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
-      <header className="game-header">
-        <div>
-          <h1>CPU SCHEDULING</h1>
-          <p>{getCpuAlgoLabel(algorithm)} — SIMULATION</p>
-        </div>
-        <button id="cpuExitButton" className="btn btn-sm" onClick={onExit}>EXIT</button>
-      </header>
+      <GameHeader moduleName="CPU SCHEDULING" algorithmLabel={getCpuAlgoLabel(algorithm)} modeLabel="SIMULATION" onExit={onExit} exitButtonId="cpuExitButton" />
 
       <main className="simulation-layout">
         {/* Center panel */}
@@ -786,7 +786,7 @@ function SimulationScreen({
         <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h2 style={{ fontSize: 14 }}>SIM CONTROL</h2>
           <button id="cpuStepButton" className="btn" onClick={onStep} disabled={revealed >= gantt.length}>STEP</button>
-          <button id="cpuAutoButton" className={`btn ${autoRunning ? 'btn-pink' : 'btn-pink'}`} onClick={onToggleAuto} disabled={revealed >= gantt.length}>
+          <button id="cpuAutoButton" className={`btn ${autoRunning ? 'btn-yellow' : 'btn-pink'}`} onClick={onToggleAuto} disabled={revealed >= gantt.length}>
             {autoRunning ? 'STOP AUTO' : 'AUTO RUN'}
           </button>
           <button id="cpuRestartButton" className="btn btn-sm" onClick={onRestart}>RESTART</button>
@@ -828,13 +828,7 @@ function PlayScreen({
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
-      <header className="game-header">
-        <div>
-          <h1>CPU SCHEDULING</h1>
-          <p>{getCpuAlgoLabel(algorithm)} — PLAY MODE</p>
-        </div>
-        <button id="cpuExitPlay" className="btn btn-sm" onClick={onExit}>EXIT</button>
-      </header>
+      <GameHeader moduleName="CPU SCHEDULING" algorithmLabel={getCpuAlgoLabel(algorithm)} modeLabel="PLAY MODE" onExit={onExit} exitButtonId="cpuExitPlay" />
 
       <main className="play-layout">
         {/* Left: status */}

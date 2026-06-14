@@ -2,7 +2,7 @@
 
 // app/vm/page.tsx — Virtual Memory topic page (Play + Simulation + Custom Input)
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { TimerBar } from '@/components/ui/TimerBar';
 import { HeartDisplay } from '@/components/ui/HeartDisplay';
@@ -21,6 +21,7 @@ import type { VmAlgorithm, VmSimResult, VmStepState } from '@/lib/vm/types';
 import type { BreakdownStep } from '@/lib/vm/breakdown';
 import { MAX_HEARTS, TIMER_BY_DIFFICULTY } from '@/lib/game/constants';
 import { DifficultySelect } from '@/components/ui/DifficultySelect';
+import { GameHeader } from '@/components/ui/GameHeader';
 
 type Screen = 'modeSelect' | 'algoSelect' | 'simulation' | 'play' | 'stageSelect';
 
@@ -72,6 +73,7 @@ export default function VmPage() {
   const activeFrames = () => (useCustom ? customFrameCount : DEFAULT_VM_FRAME_COUNT);
 
   // Simulation state
+  const autoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [simResult, setSimResult] = useState<VmSimResult | null>(null);
   const [simStep, setSimStep] = useState(0);
   const [simMessage, setSimMessage] = useState('Press STEP to process the next page reference.');
@@ -101,6 +103,7 @@ export default function VmPage() {
 
   /* ── SIMULATION ───────────────────────────────────────────── */
   function startSim(algo: VmAlgorithm) {
+    if (autoIntervalRef.current) { clearInterval(autoIntervalRef.current); autoIntervalRef.current = null; }
     setAlgorithm(algo);
     const ref = activeRef();
     const fc = activeFrames();
@@ -134,7 +137,11 @@ export default function VmPage() {
 
   function toggleVmAuto() {
     if (!simResult) return;
-    if (autoRunning) { setAutoRunning(false); return; }
+    if (autoRunning) {
+      setAutoRunning(false);
+      if (autoIntervalRef.current) { clearInterval(autoIntervalRef.current); autoIntervalRef.current = null; }
+      return;
+    }
     setAutoRunning(true);
     const result = simResult;
     let step = simStep;
@@ -146,11 +153,13 @@ export default function VmPage() {
       step++;
       if (step === result.steps.length) {
         clearInterval(id);
+        autoIntervalRef.current = null;
         setAutoRunning(false);
         const bd = generateVmBreakdown(algorithm, result);
         setBreakdown(bd);
       }
     }, 700);
+    autoIntervalRef.current = id;
   }
 
   /* ── PLAY ─────────────────────────────────────────────────── */
@@ -176,21 +185,23 @@ export default function VmPage() {
     setTimerRunning(true);
     setPlayMessage('Process the next page reference!');
     setScreen('play');
+    setTimeout(() => advancePlayStep(new Array(fc).fill(null), [], new Array(fc).fill(-1), 0, 0, 0, [], MAX_HEARTS, 0, ref), 0);
   }
 
   function advancePlayStep(
     frames: (number | null)[], fifo: number[], recency: number[],
-    index: number, faults: number, hits: number, log: ('hit' | 'fault')[], h: number, s: number
+    index: number, faults: number, hits: number, log: ('hit' | 'fault')[], h: number, s: number,
+    refString: number[]
   ) {
-    if (index >= playRef.length) {
+    if (index >= refString.length) {
       setPlayDone(true);
       setTimerRunning(false);
-      setPlayMessage(`Done! ${faults} page faults, ${hits} hits. Hit ratio: ${((hits / playRef.length) * 100).toFixed(1)}%`);
-      saveVmPlay(s, h, faults, hits, playRef.length);
+      setPlayMessage(`Done! ${faults} page faults, ${hits} hits. Hit ratio: ${((hits / refString.length) * 100).toFixed(1)}%`);
+      saveVmPlay(s, h, faults, hits, refString.length);
       return;
     }
 
-    const page = playRef[index];
+    const page = refString[index];
     const frameIdx = frames.indexOf(page);
 
     if (frameIdx !== -1) {
@@ -205,7 +216,7 @@ export default function VmPage() {
       setPlayHits(newHits);
       setPlayLog(newLog);
       setPlayMessage(`Page ${page} → HIT! Already in Frame ${frameIdx + 1}. Auto-advancing...`);
-      setTimeout(() => advancePlayStep(frames, fifo, newRecency, index + 1, faults, newHits, newLog, h, s), 600);
+      setTimeout(() => advancePlayStep(frames, fifo, newRecency, index + 1, faults, newHits, newLog, h, s, refString), 600);
     } else {
       const emptySlot = frames.indexOf(null);
       if (emptySlot !== -1) {
@@ -224,10 +235,10 @@ export default function VmPage() {
         setPlayFaults(newFaults);
         setPlayLog(newLog);
         setPlayMessage(`Page ${page} → FAULT! Loaded into empty Frame ${emptySlot + 1}.`);
-        setTimeout(() => advancePlayStep(newFrames, newFifo, newRecency, index + 1, newFaults, hits, newLog, h, s), 600);
+        setTimeout(() => advancePlayStep(newFrames, newFifo, newRecency, index + 1, newFaults, hits, newLog, h, s, refString), 600);
       } else {
         // FAULT — player must choose victim
-        const victim = findVictim(algorithm, frames as number[], fifo, recency, playRef, index);
+        const victim = findVictim(algorithm, frames as number[], fifo, recency, refString, index);
         setCorrectVictim(victim);
         setNeedsChoice(true);
         setTimerKey(k => k + 1);
@@ -266,7 +277,7 @@ export default function VmPage() {
       const newIdx = playIndex + 1;
       setPlayIndex(newIdx);
       setPlayMessage(`✓ Correct! Page ${oldPage} evicted from Frame ${frameIdx + 1}.`);
-      setTimeout(() => advancePlayStep(newFrames, newFifo, newRecency, newIdx, playFaults, playHits, playLog, hearts, newScore), 700);
+      setTimeout(() => advancePlayStep(newFrames, newFifo, newRecency, newIdx, playFaults, playHits, playLog, hearts, newScore, playRef), 700);
     } else {
       setFlashWrong(frameIdx);
       setTimeout(() => setFlashWrong(-1), 500);
@@ -311,7 +322,7 @@ export default function VmPage() {
       setPlayFifoOrder(newFifo);
       const newIdx = playIndex + 1;
       setPlayIndex(newIdx);
-      setTimeout(() => advancePlayStep(newFrames, newFifo, newRecency, newIdx, playFaults, playHits, playLog, newHearts, score), 800);
+      setTimeout(() => advancePlayStep(newFrames, newFifo, newRecency, newIdx, playFaults, playHits, playLog, newHearts, score, playRef), 800);
     }
   }
 
@@ -370,7 +381,7 @@ export default function VmPage() {
           <h1 className="font-pixel" style={{ color: 'var(--yellow)', textAlign: 'center', fontSize: 'clamp(16px,2.5vw,28px)', marginBottom: 8 }}>VIRTUAL MEMORY</h1>
           <p style={{ textAlign: 'center', color: 'var(--cyan)', marginBottom: 24 }}>Choose a page replacement algorithm.</p>
 
-          <details className="input-form-wrapper" style={{ marginBottom: 20 }}>
+          {mode === 'simulation' && <details className="input-form-wrapper" style={{ marginBottom: 20 }}>
             <summary>CUSTOM DATA INPUT (optional override)</summary>
             <div style={{ marginTop: 14 }}>
               <div className="form-field">
@@ -407,7 +418,7 @@ export default function VmPage() {
                 </>
               )}
             </div>
-          </details>
+          </details>}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: 16, marginBottom: 24 }}>
             {algos.map(a => (
@@ -416,7 +427,7 @@ export default function VmPage() {
               </button>
             ))}
           </div>
-          <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => setScreen('modeSelect')}>← BACK</button></div>
+          <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => setScreen(mode === 'play' ? 'stageSelect' : 'modeSelect')}>← BACK</button></div>
         </div>
       </div>
     );
@@ -427,10 +438,7 @@ export default function VmPage() {
     const done = simStep >= simResult.steps.length;
     return (
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
-        <header className="game-header">
-          <div><h1>VIRTUAL MEMORY</h1><p>{getVmAlgoLabel(algorithm)} — SIMULATION</p></div>
-          <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>EXIT</button>
-        </header>
+        <GameHeader moduleName="VIRTUAL MEMORY" algorithmLabel={getVmAlgoLabel(algorithm)} modeLabel="SIMULATION" onExit={() => router.push('/?topic=true')} />
         <main className="simulation-layout">
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ border: '2px solid var(--border)', padding: 12 }}>
@@ -477,7 +485,7 @@ export default function VmPage() {
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <h2 style={{ fontSize: 14 }}>SIM CONTROL</h2>
             <button className="btn" onClick={() => simResult && doSimStep(simResult, simStep)} disabled={done}>STEP</button>
-            <button className={`btn btn-pink`} onClick={toggleVmAuto} disabled={done}>{autoRunning ? 'STOP AUTO' : 'AUTO RUN'}</button>
+            <button className={`btn ${autoRunning ? 'btn-yellow' : 'btn-pink'}`} onClick={toggleVmAuto} disabled={done}>{autoRunning ? 'STOP AUTO' : 'AUTO RUN'}</button>
             <button className="btn btn-sm" onClick={() => startSim(algorithm)}>RESTART</button>
             <div className="rule-box">
               <span>ALGORITHM INFO</span>
@@ -493,10 +501,7 @@ export default function VmPage() {
   if (screen === 'play') {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
-        <header className="game-header">
-          <div><h1>VIRTUAL MEMORY</h1><p>{getVmAlgoLabel(algorithm)} — PLAY MODE</p></div>
-          <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>EXIT</button>
-        </header>
+        <GameHeader moduleName="VIRTUAL MEMORY" algorithmLabel={getVmAlgoLabel(algorithm)} modeLabel="PLAY MODE" onExit={() => router.push('/?topic=true')} />
         <main className="play-layout">
           <section className="panel">
             <h2 style={{ fontSize: 14 }}>SYSTEM</h2>

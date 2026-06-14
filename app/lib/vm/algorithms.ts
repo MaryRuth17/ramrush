@@ -39,10 +39,11 @@ export function runVmSimulation(
       // HIT
       hits++;
       recency[frameIndex] = index;
+      const stateStr = frames.map((f, i) => `F${i + 1}:${f ?? '—'}`).join(', ');
       steps.push({
         frameSlots: [...frames],
         log: 'hit',
-        message: `Page ${page} already in Frame ${frameIndex + 1}. HIT — no replacement needed.`,
+        message: `Ref #${index + 1}: page ${page} is in Frame ${frameIndex + 1} — HIT. No replacement needed. [${stateStr}]`,
         loadedPage: page,
       });
     } else {
@@ -55,15 +56,34 @@ export function runVmSimulation(
         frames[emptySlot] = page;
         fifoOrder.push(emptySlot);
         recency[emptySlot] = index;
+        const stateStr = frames.map((f, i) => `F${i + 1}:${f ?? '—'}`).join(', ');
         steps.push({
           frameSlots: [...frames],
           log: 'fault',
-          message: `Page ${page} loaded into empty Frame ${emptySlot + 1}. FAULT — no victim needed.`,
+          message: `Ref #${index + 1}: page ${page} not in memory — FAULT. Frame ${emptySlot + 1} is empty; loaded directly. [${stateStr}]`,
           loadedPage: page,
         });
       } else {
         const victim = findVictim(algorithm, frames as number[], fifoOrder, recency, referenceString, index);
         const oldPage = frames[victim];
+
+        let whyStr: string;
+        if (algorithm === 'fifo') {
+          const queueStr = fifoOrder.map(f => `F${f + 1}:pg${frames[f]}`).join(' → ');
+          whyStr = `FIFO load order: [${queueStr}]. Page ${oldPage} (Frame ${victim + 1}) was loaded longest ago → evicted.`;
+        } else if (algorithm === 'lru') {
+          const lruStr = (frames as number[]).map((f, i) => `F${i + 1}:pg${f}(last@#${recency[i]})`).join(', ');
+          whyStr = `LRU recency: [${lruStr}]. Page ${oldPage} (Frame ${victim + 1}) was used least recently (ref #${recency[victim]}) → evicted.`;
+        } else {
+          const nextUses = (frames as number[]).map((f, i) => {
+            const next = referenceString.indexOf(f, index + 1);
+            return { i, page: f, next: next === -1 ? '∞' : `#${next + 1}` };
+          });
+          const optStr = nextUses.map(n => `F${n.i + 1}:pg${n.page}(next:${n.next})`).join(', ');
+          const evictedNext = referenceString.indexOf(oldPage as number, index + 1);
+          whyStr = `OPT look-ahead: [${optStr}]. Page ${oldPage} (Frame ${victim + 1}) next used ${evictedNext === -1 ? 'never' : `at ref #${evictedNext + 1}`} — farthest ahead → evicted.`;
+        }
+
         frames = [...frames];
         frames[victim] = page;
         recency[victim] = index;
@@ -73,10 +93,11 @@ export function runVmSimulation(
           fifoOrder.push(victim);
         }
 
+        const stateStr = frames.map((f, i) => `F${i + 1}:${f ?? '—'}`).join(', ');
         steps.push({
           frameSlots: [...frames],
           log: 'fault',
-          message: `Page ${page} replaces page ${oldPage} in Frame ${victim + 1} via ${getVmAlgoLabel(algorithm)}. FAULT.`,
+          message: `Ref #${index + 1}: page ${page} not in memory — FAULT. ${whyStr} Page ${page} loaded. [${stateStr}]`,
           victimFrame: victim,
           loadedPage: page,
         });

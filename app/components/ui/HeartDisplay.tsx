@@ -9,7 +9,7 @@ interface HeartDisplayProps {
   maxHearts: number;
 }
 
-export function HeartDisplay({ hearts, maxHearts: _ }: HeartDisplayProps) {
+export function HeartDisplay({ hearts, maxHearts }: HeartDisplayProps) {
   const prevHearts = useRef(hearts);
   const [animatingOut, setAnimatingOut] = useState(false);
 
@@ -23,12 +23,17 @@ export function HeartDisplay({ hearts, maxHearts: _ }: HeartDisplayProps) {
     prevHearts.current = hearts;
   }, [hearts]);
 
+  const emptyCount = maxHearts - hearts - (animatingOut ? 1 : 0);
+
   return (
     <div style={{ fontSize: 30, letterSpacing: 4 }}>
       {Array.from({ length: hearts }, (_, i) => (
         <span key={i} className="heart-full">♥</span>
       ))}
       {animatingOut && <span className="heart-losing">♥</span>}
+      {Array.from({ length: Math.max(0, emptyCount) }, (_, i) => (
+        <span key={`e${i}`} className="heart-empty">♡</span>
+      ))}
     </div>
   );
 }
