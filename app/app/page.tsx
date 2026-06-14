@@ -196,9 +196,10 @@ function TopicSelectScreen({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gridTemplateColumns: 'repeat(2, 1fr)',
           gap: 18,
         }}
+        className="topic-grid"
       >
         {TOPICS.map((t) => (
           <button
