@@ -143,6 +143,7 @@ export default function CpuPage() {
   const [playDone, setPlayDone] = useState(false);
   const [flashRight, setFlashRight] = useState<string | null>(null);
   const [flashWrong, setFlashWrong] = useState<string | null>(null);
+  const [playStarted, setPlayStarted] = useState(false);
 
   // RR-specific play state: remaining burst per process, ordered ready queue, and admission tracker
   const [rrRemaining, setRrRemaining] = useState<Record<string, number>>({});
@@ -233,9 +234,9 @@ export default function CpuPage() {
     setHearts(MAX_HEARTS);
     setScore(0);
     setPlayDone(false);
-    setTimerKey(k => k + 1);
-    setTimerRunning(true);
-    setPlayMessage('Click the process that should run next!');
+    setTimerRunning(false);
+    setPlayStarted(false);
+    setPlayMessage('Click START to begin!');
 
     if (algo === 'rr') {
       // Mirror the reference engine's state: remaining burst, FIFO queue, admission set
@@ -261,6 +262,13 @@ export default function CpuPage() {
     }
 
     setScreen('play');
+  }
+
+  function handleStartPlay() {
+    setPlayStarted(true);
+    setTimerKey(k => k + 1);
+    setTimerRunning(true);
+    setPlayMessage('Click the process that should run next!');
   }
 
   function getCorrectAnswer(time: number, done: string[]): string | null {
@@ -499,29 +507,40 @@ export default function CpuPage() {
     const correct = getCorrectAnswer(currentTime, completedNames);
 
     return (
-      <PlayScreen
-        algorithm={algorithm}
-        processes={playProcesses}
-        arrivedProcesses={arrivedUndone}
-        completedNames={completedNames}
-        currentTime={currentTime}
-        hearts={hearts}
-        score={score}
-        playMessage={playMessage}
-        playDone={playDone}
-        timerKey={timerKey}
-        timerRunning={timerRunning && !playDone}
-        correctAnswer={correct}
-        flashRight={flashRight}
-        flashWrong={flashWrong}
-        rrRemaining={algorithm === 'rr' ? rrRemaining : undefined}
-        rrQueue={algorithm === 'rr' ? rrQueue : undefined}
-        timerSeconds={TIMER_BY_DIFFICULTY[stage]}
-        onProcessClick={(name) => handleProcessClick(name, currentTime, completedNames)}
-        onTimeout={() => handleTimeout(currentTime, completedNames)}
-        onRestart={() => startPlay(algorithm)}
-        onExit={() => router.push('/?topic=true')}
-      />
+      <>
+        <PlayScreen
+          algorithm={algorithm}
+          processes={playProcesses}
+          arrivedProcesses={arrivedUndone}
+          completedNames={completedNames}
+          currentTime={currentTime}
+          hearts={hearts}
+          score={score}
+          playMessage={playMessage}
+          playDone={playDone}
+          timerKey={timerKey}
+          timerRunning={timerRunning && playStarted && !playDone}
+          correctAnswer={correct}
+          flashRight={flashRight}
+          flashWrong={flashWrong}
+          rrRemaining={algorithm === 'rr' ? rrRemaining : undefined}
+          rrQueue={algorithm === 'rr' ? rrQueue : undefined}
+          timerSeconds={TIMER_BY_DIFFICULTY[stage]}
+          onProcessClick={(name) => handleProcessClick(name, currentTime, completedNames)}
+          onTimeout={() => handleTimeout(currentTime, completedNames)}
+          onRestart={() => startPlay(algorithm)}
+          onExit={() => router.push('/?topic=true')}
+        />
+        {!playStarted && !playDone && (
+          <div className="modal-overlay">
+             <div className="modal-card" style={{ textAlign: 'center', width: 'auto' }}>
+                <h2>READY?</h2>
+                <p style={{ color: 'var(--cyan)' }}>Take a moment to prepare.</p>
+                <button className="btn btn-lg btn-yellow" onClick={handleStartPlay} style={{ marginTop: 24 }}>START GAME</button>
+             </div>
+          </div>
+        )}
+      </>
     );
   }
 

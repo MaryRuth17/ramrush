@@ -96,6 +96,7 @@ export default function DiskPage() {
   const [flashRight, setFlashRight] = useState(-1);
   const [flashWrong, setFlashWrong] = useState(-1);
   const [totalMoved, setTotalMoved] = useState(0);
+  const [playStarted, setPlayStarted] = useState(false);
 
   /* ── SIMULATION ───────────────────────────────────────────── */
   function startSim(algo: DiskAlgorithm) {
@@ -216,10 +217,17 @@ export default function DiskPage() {
     setScore(0);
     setPlayDone(false);
     setTotalMoved(0);
+    setTimerRunning(false);
+    setPlayStarted(false);
+    setPlayMessage(`Click START to begin!`);
+    setScreen('play');
+  }
+
+  function handleStartPlay() {
+    setPlayStarted(true);
     setTimerKey(k => k + 1);
     setTimerRunning(true);
     setPlayMessage(`Click the next track the head should visit!`);
-    setScreen('play');
   }
 
   function advancePastBoundaries(step: number, visited: number[], head: number, moved: number, h: number, s: number) {
@@ -611,6 +619,15 @@ export default function DiskPage() {
             )}
           </section>
         </main>
+        {!playStarted && !playDone && (
+          <div className="modal-overlay">
+             <div className="modal-card" style={{ textAlign: 'center', width: 'auto' }}>
+                <h2>READY?</h2>
+                <p style={{ color: 'var(--cyan)' }}>Take a moment to prepare.</p>
+                <button className="btn btn-lg btn-yellow" onClick={handleStartPlay} style={{ marginTop: 24 }}>START GAME</button>
+             </div>
+          </div>
+        )}
       </div>
     );
   }

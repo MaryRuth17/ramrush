@@ -133,6 +133,7 @@ export default function MemoryPage() {
   const [flashBlock, setFlashBlock] = useState<{ idx: number; type: 'right' | 'wrong' } | null>(null);
   const [currentProcess, setCurrentProcess] = useState<MemoryProcess | null>(null);
   const [selectedSetIdx, setSelectedSetIdx] = useState(0);
+  const [playStarted, setPlayStarted] = useState(false);
 
   const getActiveData = useCallback((overrideIdx?: number) => {
     if (useCustom) return { blocks: cloneBlocks(customBlocks), processes: customProcesses };
@@ -246,10 +247,19 @@ export default function MemoryPage() {
     setScore(0);
     setPlayDone(false);
     setFlashBlock(null);
+    setTimerRunning(false);
+    setPlayStarted(false);
+    setPlayMessage(`Click START to begin!`);
+    setScreen('play');
+  }
+
+  function handleStartPlay() {
+    setPlayStarted(true);
     setTimerKey(k => k + 1);
     setTimerRunning(true);
-    setPlayMessage(`Allocate ${firstProc.name} (${firstProc.size} MB) using ${getAlgorithmLabel(algo)}.`);
-    setScreen('play');
+    if (currentProcess) {
+      setPlayMessage(`Allocate ${currentProcess.name} (${currentProcess.size} MB) using ${getAlgorithmLabel(algorithm)}.`);
+    }
   }
 
   function handleBlockClick(
@@ -686,6 +696,15 @@ export default function MemoryPage() {
             )}
           </section>
         </main>
+        {!playStarted && !playDone && (
+          <div className="modal-overlay">
+             <div className="modal-card" style={{ textAlign: 'center', width: 'auto' }}>
+                <h2>READY?</h2>
+                <p style={{ color: 'var(--cyan)' }}>Take a moment to prepare.</p>
+                <button className="btn btn-lg btn-yellow" onClick={handleStartPlay} style={{ marginTop: 24 }}>START GAME</button>
+             </div>
+          </div>
+        )}
       </div>
     );
   }

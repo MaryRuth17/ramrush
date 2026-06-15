@@ -99,7 +99,8 @@ export default function VmPage() {
   const [correctVictim, setCorrectVictim] = useState(-1);
   const [flashRight, setFlashRight] = useState(-1);
   const [flashWrong, setFlashWrong] = useState(-1);
-  const [playLog, setPlayLog] = useState<('hit' | 'fault')[]>([]);
+  const [playLog, setPlayLog] = useState<('hit' | 'fault' | 'auto')[]>([]);
+  const [playStarted, setPlayStarted] = useState(false);
 
   /* ── SIMULATION ───────────────────────────────────────────── */
   function startSim(algo: VmAlgorithm) {
@@ -181,16 +182,23 @@ export default function VmPage() {
     setPlayDone(false);
     setNeedsChoice(false);
     setPlayLog([]);
-    setTimerKey(k => k + 1);
-    setTimerRunning(true);
-    setPlayMessage('Process the next page reference!');
+    setTimerRunning(false);
+    setPlayStarted(false);
+    setPlayMessage('Click START to begin!');
     setScreen('play');
-    setTimeout(() => advancePlayStep(new Array(fc).fill(null), [], new Array(fc).fill(-1), 0, 0, 0, [], MAX_HEARTS, 0, ref), 0);
+  }
+
+  function handleStartPlay() {
+    setPlayStarted(true);
+    setTimerRunning(true);
+    setTimerKey(k => k + 1);
+    setPlayMessage('Process the next page reference!');
+    setTimeout(() => advancePlayStep(playFrames, playFifoOrder, playRecency, playIndex, playFaults, playHits, playLog, hearts, score, playRef), 0);
   }
 
   function advancePlayStep(
     frames: (number | null)[], fifo: number[], recency: number[],
-    index: number, faults: number, hits: number, log: ('hit' | 'fault')[], h: number, s: number,
+    index: number, faults: number, hits: number, log: ('hit' | 'fault' | 'auto')[], h: number, s: number,
     refString: number[]
   ) {
     if (index >= refString.length) {
@@ -227,7 +235,7 @@ export default function VmPage() {
         const newRecency = [...recency];
         newRecency[emptySlot] = index;
         const newFaults = faults + 1;
-        const newLog = [...log, 'fault' as const];
+        const newLog = [...log, 'auto' as const];
         setPlayFrames(newFrames);
         setPlayFifoOrder(newFifo);
         setPlayRecency(newRecency);
@@ -245,7 +253,7 @@ export default function VmPage() {
         setTimerRunning(true);
         setPlayMessage(`Page ${page} → FAULT! Which frame should be evicted?`);
         setPlayFaults(faults + 1);
-        setPlayLog([...log, 'fault' as const]);
+        // DO NOT PUSH TO playLog YET! Wait for user choice.
       }
     }
   }
@@ -276,8 +284,10 @@ export default function VmPage() {
       setPlayFifoOrder(newFifo);
       const newIdx = playIndex + 1;
       setPlayIndex(newIdx);
+      const newLog = [...playLog, 'fault' as const];
+      setPlayLog(newLog);
       setPlayMessage(`✓ Correct! Page ${oldPage} evicted from Frame ${frameIdx + 1}.`);
-      setTimeout(() => advancePlayStep(newFrames, newFifo, newRecency, newIdx, playFaults, playHits, playLog, hearts, newScore, playRef), 700);
+      setTimeout(() => advancePlayStep(newFrames, newFifo, newRecency, newIdx, playFaults, playHits, newLog, hearts, newScore, playRef), 700);
     } else {
       setFlashWrong(frameIdx);
       setTimeout(() => setFlashWrong(-1), 500);
@@ -288,6 +298,8 @@ export default function VmPage() {
       if (newHearts <= 0) {
         setPlayDone(true);
         setPlayMessage('GAME OVER!');
+        const newLog = [...playLog, 'fault' as const];
+        setPlayLog(newLog);
         saveVmPlay(Math.max(0, score - 5), 0, playFaults, playHits, playRef.length);
       } else {
         setTimeout(() => {
@@ -305,6 +317,10 @@ export default function VmPage() {
     setHearts(newHearts);
     setNeedsChoice(false);
     setPlayMessage(`TIME OUT! -1 heart. Correct answer was Frame ${correctVictim + 1}.`);
+    
+    const newLog = [...playLog, 'fault' as const];
+    setPlayLog(newLog);
+
     if (newHearts <= 0) {
       setPlayDone(true);
       setTimerRunning(false);
@@ -322,7 +338,7 @@ export default function VmPage() {
       setPlayFifoOrder(newFifo);
       const newIdx = playIndex + 1;
       setPlayIndex(newIdx);
-      setTimeout(() => advancePlayStep(newFrames, newFifo, newRecency, newIdx, playFaults, playHits, playLog, newHearts, score, playRef), 800);
+      setTimeout(() => advancePlayStep(newFrames, newFifo, newRecency, newIdx, playFaults, playHits, newLog, newHearts, score, playRef), 800);
     }
   }
 
@@ -521,10 +537,23 @@ export default function VmPage() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {playRef.map((p, i) => {
                   let cls = 'ref-cell';
-                  if (i < playLog.length) cls += playLog[i] === 'hit' ? ' hit' : ' fault';
+                  let customStyle: React.CSSProperties = {};
+                  if (i < playLog.length) {
+                    const status = playLog[i];
+                    if (status === 'hit' || status === 'auto') {
+                      cls += ' hit';
+                      customStyle = { borderColor: 'var(--success)', color: 'var(--success)' };
+                    } else if (status === 'fault') {
+                      cls += ' fault';
+                      customStyle = { borderColor: 'var(--danger)', color: 'var(--danger)' };
+                    }
+                  }
                   if (i === playIndex) cls += ' current';
-                  return <div key={i} className={cls}>{p}</div>;
+                  return <div key={i} className={cls} style={customStyle}>{p}</div>;
                 })}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--yellow)', marginTop: 8 }}>
+                DEBUG playLog: {JSON.stringify(playLog)}
               </div>
             </div>
             <div style={{ border: '2px solid var(--border)', padding: 12 }}>
@@ -574,6 +603,15 @@ export default function VmPage() {
             )}
           </section>
         </main>
+        {!playStarted && !playDone && (
+          <div className="modal-overlay">
+             <div className="modal-card" style={{ textAlign: 'center', width: 'auto' }}>
+                <h2>READY?</h2>
+                <p style={{ color: 'var(--cyan)' }}>Take a moment to prepare.</p>
+                <button className="btn btn-lg btn-yellow" onClick={handleStartPlay} style={{ marginTop: 24 }}>START GAME</button>
+             </div>
+          </div>
+        )}
       </div>
     );
   }
