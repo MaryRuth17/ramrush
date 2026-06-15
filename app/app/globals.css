@@ -259,7 +259,7 @@ body {
   min-width: 44px;
   transition: border-color 0.2s, color 0.2s;
 }
-.ref-cell.hit   { border-color: var(--danger); color: var(--danger); }
+.ref-cell.hit   { border-color: var(--success); color: var(--success); }
 .ref-cell.fault { border-color: var(--danger);  color: var(--danger); }
 .ref-cell.current { outline: 3px solid var(--yellow); }
 
@@ -496,8 +496,16 @@ body {
 .algo-card small  { color: var(--white); font-size: 13px; line-height: 1.5; }
 
 /* ── HEART DISPLAY ───────────────────────────────────────── */
-.heart-full  { color: var(--pink); }
-.heart-empty { color: #3a2530; }
+@keyframes heart-lose {
+  0%   { transform: scale(1);   color: var(--pink);  }
+  25%  { transform: scale(1.7); color: #ff0033;      }
+  55%  { transform: scale(1.4); color: #ff0033;      }
+  100% { transform: scale(1);   color: #3a2530;      }
+}
+
+.heart-full   { display: inline-block; color: var(--pink); }
+.heart-empty  { display: inline-block; color: #3a2530; }
+.heart-losing { display: inline-block; animation: heart-lose 0.6s ease-out forwards; }
 
 /* ── PLAY SCREEN LAYOUT ──────────────────────────────────── */
 .play-layout {
@@ -539,6 +547,9 @@ body {
 }
 @media (max-width: 720px) {
   .game-header { flex-direction: column; text-align: center; }
+}
+@media (max-width: 600px) {
+  .topic-grid { grid-template-columns: 1fr !important; }
 }
 @media (max-width: 480px) {
   .topic-card, .algo-card { min-height: auto; padding: 16px; }

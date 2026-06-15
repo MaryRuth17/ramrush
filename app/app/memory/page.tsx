@@ -20,10 +20,11 @@ import {
 import { generateMemoryBreakdown } from '@/lib/memory/breakdown';
 import type { MemoryAlgorithm, MemoryBlock, MemoryProcess } from '@/lib/memory/types';
 import type { BreakdownStep } from '@/lib/memory/breakdown';
+import { MAX_HEARTS, TIMER_BY_DIFFICULTY } from '@/lib/game/constants';
+import { DifficultySelect } from '@/components/ui/DifficultySelect';
+import { GameHeader } from '@/components/ui/GameHeader';
 
 type Screen = 'modeSelect' | 'stageSelect' | 'algoSelect' | 'play' | 'simulation';
-const MAX_HEARTS = 3;
-const TIME_LIMIT = 5;
 
 const DEFAULT_MEMORY: MemoryBlock[] = [
   { size: 120, used: false, processName: null, usedSize: 0 },
@@ -33,47 +34,61 @@ const DEFAULT_MEMORY: MemoryBlock[] = [
   { size: 250, used: false, processName: null, usedSize: 0 },
 ];
 
-const STAGE_DATA: Record<'easy' | 'normal' | 'hard', { blocks: MemoryBlock[]; processes: MemoryProcess[] }> = {
-  easy: {
-    blocks: [
-      { size: 200, used: false, processName: null, usedSize: 0 },
-      { size: 150, used: false, processName: null, usedSize: 0 },
-      { size: 300, used: false, processName: null, usedSize: 0 },
-    ],
-    processes: [
-      { id: 1, name: 'notepad.exe', size: 80 },
-      { id: 2, name: 'calc.exe', size: 140 },
-      { id: 3, name: 'paint.exe', size: 120 },
-    ],
-  },
-  normal: {
-    blocks: DEFAULT_MEMORY,
-    processes: [
-      { id: 1, name: 'chrome.exe', size: 180 },
-      { id: 2, name: 'discord.exe', size: 95 },
-      { id: 3, name: 'spotify.exe', size: 80 },
-      { id: 4, name: 'code.exe', size: 140 },
-      { id: 5, name: 'photoshop.exe', size: 260 },
-    ],
-  },
-  hard: {
-    blocks: [
-      { size: 80, used: false, processName: null, usedSize: 0 },
-      { size: 60, used: false, processName: null, usedSize: 0 },
-      { size: 200, used: false, processName: null, usedSize: 0 },
-      { size: 120, used: false, processName: null, usedSize: 0 },
-      { size: 170, used: false, processName: null, usedSize: 0 },
-      { size: 50, used: false, processName: null, usedSize: 0 },
-    ],
-    processes: [
-      { id: 1, name: 'chrome.exe', size: 75 },
-      { id: 2, name: 'vscode.exe', size: 110 },
-      { id: 3, name: 'steam.exe', size: 180 },
-      { id: 4, name: 'discord.exe', size: 55 },
-      { id: 5, name: 'obs.exe', size: 160 },
-      { id: 6, name: 'zoom.exe', size: 90 },
-    ],
-  },
+type StageEntry = { blocks: MemoryBlock[]; processes: MemoryProcess[] };
+const mb = (size: number): MemoryBlock => ({ size, used: false, processName: null, usedSize: 0 });
+
+const STAGE_DATA: Record<'easy' | 'normal' | 'hard', StageEntry[]> = {
+  easy: [
+    // Set A — clear size spread, algo differences subtle
+    {
+      blocks: [mb(200), mb(150), mb(300)],
+      processes: [{ id: 1, name: 'notepad.exe', size: 80 }, { id: 2, name: 'calc.exe', size: 140 }, { id: 3, name: 'paint.exe', size: 120 }],
+    },
+    // Set B — 200-size process: FF→250, BF→200 (exact fit!)
+    {
+      blocks: [mb(100), mb(250), mb(200)],
+      processes: [{ id: 1, name: 'notepad.exe', size: 90 }, { id: 2, name: 'calc.exe', size: 200 }, { id: 3, name: 'paint.exe', size: 100 }],
+    },
+    // Set C — 70-size process: FF→180 (wastes 110), BF→80 (only 10 left)
+    {
+      blocks: [mb(180), mb(80), mb(250)],
+      processes: [{ id: 1, name: 'notepad.exe', size: 70 }, { id: 2, name: 'calc.exe', size: 220 }, { id: 3, name: 'paint.exe', size: 75 }],
+    },
+  ],
+  normal: [
+    // Set A — default; photoshop (260) can only fit in 300-block
+    {
+      blocks: DEFAULT_MEMORY,
+      processes: [{ id: 1, name: 'chrome.exe', size: 180 }, { id: 2, name: 'discord.exe', size: 95 }, { id: 3, name: 'spotify.exe', size: 80 }, { id: 4, name: 'code.exe', size: 140 }, { id: 5, name: 'photoshop.exe', size: 260 }],
+    },
+    // Set B — 85-size: FF→350 (wastes 265), BF→80 (tight fit); game.exe (310) needs 350 or 300
+    {
+      blocks: [mb(350), mb(100), mb(250), mb(80), mb(300)],
+      processes: [{ id: 1, name: 'game.exe', size: 85 }, { id: 2, name: 'browser.exe', size: 230 }, { id: 3, name: 'editor.exe', size: 90 }, { id: 4, name: 'studio.exe', size: 280 }, { id: 5, name: 'server.exe', size: 310 }],
+    },
+    // Set C — web.exe (190) exact-fits 200 under BF; db.exe (380) can only fit 400
+    {
+      blocks: [mb(200), mb(350), mb(100), mb(400), mb(150)],
+      processes: [{ id: 1, name: 'web.exe', size: 190 }, { id: 2, name: 'render.exe', size: 310 }, { id: 3, name: 'cache.exe', size: 95 }, { id: 4, name: 'db.exe', size: 380 }, { id: 5, name: 'proxy.exe', size: 140 }],
+    },
+  ],
+  hard: [
+    // Set A — tight fits throughout; discord (55) competes with zoom (90) for small blocks
+    {
+      blocks: [mb(80), mb(60), mb(200), mb(120), mb(170), mb(50)],
+      processes: [{ id: 1, name: 'chrome.exe', size: 75 }, { id: 2, name: 'vscode.exe', size: 110 }, { id: 3, name: 'steam.exe', size: 180 }, { id: 4, name: 'discord.exe', size: 55 }, { id: 5, name: 'obs.exe', size: 160 }, { id: 6, name: 'zoom.exe', size: 90 }],
+    },
+    // Set B — 140 competes for 150; BF vs WF send it to very different blocks
+    {
+      blocks: [mb(150), mb(50), mb(300), mb(90), mb(200), mb(70)],
+      processes: [{ id: 1, name: 'agent.exe', size: 140 }, { id: 2, name: 'log.exe', size: 45 }, { id: 3, name: 'engine.exe', size: 280 }, { id: 4, name: 'sync.exe', size: 80 }, { id: 5, name: 'api.exe', size: 190 }, { id: 6, name: 'cli.exe', size: 60 }],
+    },
+    // Set C — kernel (300) can only fit 320; FF vs BF split on who gets 180 vs 250
+    {
+      blocks: [mb(100), mb(250), mb(60), mb(180), mb(320), mb(80)],
+      processes: [{ id: 1, name: 'kernel.exe', size: 300 }, { id: 2, name: 'daemon.exe', size: 90 }, { id: 3, name: 'driver.exe', size: 55 }, { id: 4, name: 'module.exe', size: 160 }, { id: 5, name: 'plugin.exe', size: 220 }, { id: 6, name: 'hook.exe', size: 70 }],
+    },
+  ],
 };
 
 export default function MemoryPage() {
@@ -117,18 +132,20 @@ export default function MemoryPage() {
   const [playDone, setPlayDone] = useState(false);
   const [flashBlock, setFlashBlock] = useState<{ idx: number; type: 'right' | 'wrong' } | null>(null);
   const [currentProcess, setCurrentProcess] = useState<MemoryProcess | null>(null);
-  const [gameStarted, setGameStarted] = useState(false);
+  const [selectedSetIdx, setSelectedSetIdx] = useState(0);
 
-  const getActiveData = useCallback(() => {
+  const getActiveData = useCallback((overrideIdx?: number) => {
     if (useCustom) return { blocks: cloneBlocks(customBlocks), processes: customProcesses };
-    const s = STAGE_DATA[stage];
+    const s = STAGE_DATA[stage][overrideIdx ?? selectedSetIdx];
     return { blocks: cloneBlocks(s.blocks), processes: s.processes };
-  }, [useCustom, customBlocks, customProcesses, stage]);
+  }, [useCustom, customBlocks, customProcesses, stage, selectedSetIdx]);
 
   /* ── SIMULATION ───────────────────────────────────────────── */
   function startSimulation(algo: MemoryAlgorithm) {
     setAlgorithm(algo);
-    const { blocks, processes } = getActiveData();
+    const randomIdx = Math.floor(Math.random() * 3);
+    setSelectedSetIdx(randomIdx);
+    const { blocks, processes } = getActiveData(randomIdx);
     setSimBlocks(blocks);
     setSimProcesses(processes);
     setSimStep(0);
@@ -172,7 +189,9 @@ export default function MemoryPage() {
       const newUnproc = [...unproc, { ...process, reason }];
       setUnprocessed(newUnproc);
       setSimStep(newStep);
-      setSimMessage(`Cannot allocate ${process.name} (${process.size} MB) — no suitable block found.`);
+      const freeBlocks = newBlocks.filter(b => !b.used);
+      const largest = freeBlocks.length > 0 ? Math.max(...freeBlocks.map(b => b.size)) : 0;
+      setSimMessage(`Cannot allocate ${process.name} (${process.size} MB) — largest free block is only ${largest} MB. No block fits.`);
       if (newStep >= processes.length) {
         const bd = generateMemoryBreakdown(algo, newBlocks, history);
         setBreakdown(bd);
@@ -189,7 +208,21 @@ export default function MemoryPage() {
     setSimHistory(newHistory);
     setSimStep(newStep);
     setProcessed(newProc);
-    setSimMessage(`Allocated ${process.name} (${process.size} MB) → Block ${targetIdx + 1}. Leftover: ${leftover} MB.`);
+
+    let allocReason: string;
+    const freeEligible = newBlocks.map((b, i) => ({ b, i })).filter(({ b }) => !b.used && b.size >= process.size);
+    if (algo === 'firstFit') {
+      const skipped = newBlocks.slice(0, targetIdx).filter(b => !b.used && b.size < process.size).length;
+      const skipNote = skipped > 0 ? ` (${skipped} block(s) too small, skipped)` : '';
+      allocReason = `First Fit: scanning left to right${skipNote}. Block ${targetIdx + 1} (${newBlocks[targetIdx].size} MB) is first to fit ${process.name} (${process.size} MB). Leftover: ${leftover} MB.`;
+    } else if (algo === 'bestFit') {
+      const comparison = freeEligible.map(({ b, i }) => `B${i + 1}:${b.size}MB→${b.size - process.size}left`).join(', ');
+      allocReason = `Best Fit: all free blocks compared — [${comparison}]. Block ${targetIdx + 1} has smallest leftover (${leftover} MB) → allocated.`;
+    } else {
+      const comparison = freeEligible.map(({ b, i }) => `B${i + 1}:${b.size}MB`).join(', ');
+      allocReason = `Worst Fit: picks largest free block to maximise leftover. Eligible: [${comparison}]. Block ${targetIdx + 1} (${newBlocks[targetIdx].size} MB) is largest → ${process.name} allocated. Leftover: ${leftover} MB.`;
+    }
+    setSimMessage(allocReason);
 
     if (newStep >= processes.length) {
       const bd = generateMemoryBreakdown(algo, allocated, newHistory);
@@ -201,7 +234,9 @@ export default function MemoryPage() {
   /* ── PLAY ─────────────────────────────────────────────────── */
   function startPlay(algo: MemoryAlgorithm) {
     setAlgorithm(algo);
-    const { blocks, processes } = getActiveData();
+    const randomIdx = Math.floor(Math.random() * 3);
+    setSelectedSetIdx(randomIdx);
+    const { blocks, processes } = getActiveData(randomIdx);
     const [firstProc, ...rest] = processes;
     setPlayBlocks(blocks);
     setPlayProcesses(processes);
@@ -211,17 +246,10 @@ export default function MemoryPage() {
     setScore(0);
     setPlayDone(false);
     setFlashBlock(null);
-    setGameStarted(false);
     setTimerKey(k => k + 1);
-    setTimerRunning(false);
-    setPlayMessage('Press START GAME to begin!');
-    setScreen('play');
-  }
-
-  function handleStartGame() {
-    setGameStarted(true);
     setTimerRunning(true);
-    setPlayMessage(`Allocate ${currentProcess?.name} (${currentProcess?.size} MB) using ${getAlgorithmLabel(algorithm)}.`);
+    setPlayMessage(`Allocate ${firstProc.name} (${firstProc.size} MB) using ${getAlgorithmLabel(algo)}.`);
+    setScreen('play');
   }
 
   function handleBlockClick(
@@ -344,7 +372,13 @@ export default function MemoryPage() {
   }
 
   async function saveMemPlay(s: number, h: number, blocks: MemoryBlock[], proc: number) {
-    // Database saving has been disabled as requested
+    try {
+      await fetch('/api/memory/play', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ algorithm, stageType: stage, score: s, hearts: h, processed: proc, unprocessed: 0 }),
+      });
+    } catch { /* silent */ }
   }
 
   /* ── RENDER ───────────────────────────────────────────────── */
@@ -368,20 +402,16 @@ export default function MemoryPage() {
   );
 
   if (screen === 'stageSelect') return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dark)' }}>
-      <div style={{ maxWidth: 700, width: '100%', padding: 24 }}>
-        <h1 className="font-pixel" style={{ color: 'var(--yellow)', textAlign: 'center', fontSize: 'clamp(18px,3vw,28px)', marginBottom: 32 }}>SELECT STAGE</h1>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: 18, marginBottom: 24 }}>
-          {(['easy', 'normal', 'hard'] as const).map(s => (
-            <button key={s} id={`mem-stage-${s}`} className="algo-card" onClick={() => { setStage(s); setScreen('algoSelect'); }}>
-              <strong>{s.toUpperCase()}</strong>
-              <small>{s === 'easy' ? '3 blocks, 3 processes' : s === 'normal' ? '5 blocks, 5 processes' : '6 blocks, 6 processes — tight fits!'}</small>
-            </button>
-          ))}
-        </div>
-        <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => setScreen('modeSelect')}>← BACK</button></div>
-      </div>
-    </div>
+    <DifficultySelect
+      title="MEMORY ALLOCATION"
+      descriptions={{
+        easy:   '3 blocks · 3 processes · 8s timer',
+        normal: '5 blocks · 5 processes · 5s timer',
+        hard:   '6 blocks · 6 processes · 3s timer',
+      }}
+      onSelect={(d) => { setStage(d); setScreen('algoSelect'); }}
+      onBack={() => setScreen('modeSelect')}
+    />
   );
 
   if (screen === 'algoSelect') {
@@ -489,14 +519,11 @@ export default function MemoryPage() {
   }
 
   if (screen === 'simulation') {
-    const { processes } = useCustom ? { processes: customProcesses } : STAGE_DATA[stage];
+    const { processes } = useCustom ? { processes: customProcesses } : STAGE_DATA[stage][selectedSetIdx];
     const done = simStep >= processes.length;
     return (
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
-        <header className="game-header">
-          <div><h1>MEMORY ALLOCATION</h1><p>{getAlgorithmLabel(algorithm)} — SIMULATION</p></div>
-          <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>EXIT</button>
-        </header>
+        <GameHeader moduleName="MEMORY ALLOCATION" algorithmLabel={getAlgorithmLabel(algorithm)} modeLabel="SIMULATION" onExit={() => router.push('/?topic=true')} exitButtonId="memSimExit" />
         <main className="simulation-layout">
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ border: '2px solid var(--border)', padding: 12 }}>
@@ -569,10 +596,7 @@ export default function MemoryPage() {
     const correctIdx = currentProcess ? findTargetBlock(playBlocks, currentProcess, algorithm) : -1;
     return (
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
-        <header className="game-header">
-          <div><h1>MEMORY ALLOCATION</h1><p>{getAlgorithmLabel(algorithm)} — PLAY ({stage.toUpperCase()})</p></div>
-          <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>EXIT</button>
-        </header>
+        <GameHeader moduleName="MEMORY ALLOCATION" algorithmLabel={getAlgorithmLabel(algorithm)} modeLabel={`PLAY (${stage.toUpperCase()})`} onExit={() => router.push('/?topic=true')} exitButtonId="memPlayExit" />
         <main className="play-layout">
           {/* Left: status */}
           <section className="panel">
@@ -587,7 +611,7 @@ export default function MemoryPage() {
             {!playDone && currentProcess && (
               <TimerBar
                 key={timerKey}
-                seconds={TIME_LIMIT}
+                seconds={TIMER_BY_DIFFICULTY[stage]}
                 running={timerRunning}
                 onExpire={() => handlePlayTimeout(currentProcess, playBlocks, playQueue, hearts, score)}
               />
@@ -614,12 +638,12 @@ export default function MemoryPage() {
                       key={i}
                       id={`mem-block-${i}`}
                       className={`memory-block ${b.used ? 'used' : 'free'} ${isFlashRight ? 'correct-flash' : isFlashWrong ? 'wrong-flash' : ''}`}
-                      disabled={!gameStarted || b.used || playDone || !currentProcess}
+                      onClick={() => !b.used && currentProcess && !playDone && handleBlockClick(i, currentProcess, playBlocks, playQueue, hearts, score)}
+                      disabled={b.used || playDone || !currentProcess}
                       style={{
                         outline: isFlashRight ? '4px solid var(--success)' : isFlashWrong ? '4px solid var(--danger)' : undefined,
-                        cursor: (!gameStarted || b.used || playDone) ? 'default' : 'pointer',
+                        cursor: b.used || playDone ? 'default' : 'pointer',
                       }}
-                      onClick={() => gameStarted && !b.used && !playDone && handleBlockClick(i, currentProcess!, playBlocks, playQueue, hearts, score)}
                     >
                       <strong style={{ display: 'block', fontSize: 13 }}>BLOCK {i + 1}</strong>
                       <span style={{ display: 'block', marginTop: 4 }}>{b.size} MB</span>
@@ -654,11 +678,6 @@ export default function MemoryPage() {
               <JustifiedText style={{ fontSize: 12, marginTop: 4 }}>{getAlgorithmRule(algorithm)}</JustifiedText>
             </div>
             <div className="message-box" style={{ fontSize: 12 }}>{playMessage}</div>
-            
-            {!gameStarted && !playDone && (
-              <button className="btn btn-yellow" onClick={handleStartGame}>START GAME</button>
-            )}
-
             {playDone && (
               <>
                 <button id="memPlayRestart" className="btn" onClick={() => startPlay(algorithm)}>PLAY AGAIN</button>

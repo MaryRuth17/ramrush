@@ -13,6 +13,7 @@ export interface GanttBlock {
   name: string;
   start: number;
   end: number;
+  reason: string;
 }
 
 export interface CpuStatRow extends CpuProcess {

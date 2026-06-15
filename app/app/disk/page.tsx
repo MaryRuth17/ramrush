@@ -2,7 +2,7 @@
 
 // app/disk/page.tsx — Disk Scheduling topic page (Play + Simulation + Custom Input)
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { TimerBar } from '@/components/ui/TimerBar';
 import { HeartDisplay } from '@/components/ui/HeartDisplay';
@@ -20,16 +20,45 @@ import {
 import { generateDiskBreakdown } from '@/lib/disk/breakdown';
 import type { DiskAlgorithm, DiskSimResult } from '@/lib/disk/types';
 import type { BreakdownStep } from '@/lib/disk/breakdown';
+import { MAX_HEARTS, TIMER_BY_DIFFICULTY } from '@/lib/game/constants';
+import { DifficultySelect } from '@/components/ui/DifficultySelect';
+import { GameHeader } from '@/components/ui/GameHeader';
 
-type Screen = 'modeSelect' | 'algoSelect' | 'simulation' | 'play';
-const MAX_HEARTS = 3;
-const TIME_LIMIT = 5;
+type Screen = 'modeSelect' | 'algoSelect' | 'simulation' | 'play' | 'stageSelect';
+
+const DISK_SETS: Record<'easy' | 'normal' | 'hard', { requests: number[]; headStart: number }[]> = {
+  easy: [
+    // Set A — classic textbook example, head near low end
+    { requests: [98, 183, 37, 122, 14], headStart: 53 },
+    // Set B — head in middle, symmetric spread; SSTF vs SCAN diverge
+    { requests: [45, 100, 180, 20, 130], headStart: 80 },
+    // Set C — head near start, large jump visible with FCFS
+    { requests: [30, 170, 60, 150, 90], headStart: 10 },
+  ],
+  normal: [
+    // Set A — 8 requests from textbook, head at 53
+    { requests: [98, 183, 37, 122, 14, 124, 65, 67], headStart: 53 },
+    // Set B — head at high end, cluster + outlier; SSTF saves dramatically vs FCFS
+    { requests: [176, 79, 34, 60, 92, 11, 41, 114], headStart: 100 },
+    // Set C — tight cluster near head plus two distant requests
+    { requests: [55, 58, 39, 18, 90, 160, 150, 38], headStart: 45 },
+  ],
+  hard: [
+    // Set A — 11 requests including boundary extremes (5, 183, 170)
+    { requests: [98, 183, 37, 122, 14, 124, 65, 67, 170, 5, 88], headStart: 53 },
+    // Set B — dense cluster in 77–177 range; C-SCAN wrap visible
+    { requests: [86, 147, 91, 177, 94, 150, 102, 175, 130, 77, 121], headStart: 143 },
+    // Set C — alternating sides of disk; emphasises LOOK reversal efficiency
+    { requests: [22, 116, 42, 178, 56, 134, 74, 168, 96, 12, 158], headStart: 75 },
+  ],
+};
 
 export default function DiskPage() {
   const router = useRouter();
   const [screen, setScreen] = useState<Screen>('modeSelect');
   const [mode, setMode] = useState<'play' | 'simulation'>('simulation');
   const [algorithm, setAlgorithm] = useState<DiskAlgorithm>('fcfs');
+  const [stage, setStage] = useState<'easy' | 'normal' | 'hard'>('normal');
 
   // Custom input
   const [customRequests, setCustomRequests] = useState(DEFAULT_DISK_REQUESTS.join(', '));
@@ -44,6 +73,7 @@ export default function DiskPage() {
   const activeHead = () => useCustom ? customHead : DEFAULT_DISK_HEAD_START;
 
   // Simulation state
+  const autoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [simResult, setSimResult] = useState<DiskSimResult | null>(null);
   const [revealed, setRevealed] = useState(0);
   const [simMessage, setSimMessage] = useState('Press STEP to move the disk head.');
@@ -66,10 +96,10 @@ export default function DiskPage() {
   const [flashRight, setFlashRight] = useState(-1);
   const [flashWrong, setFlashWrong] = useState(-1);
   const [totalMoved, setTotalMoved] = useState(0);
-  const [gameStarted, setGameStarted] = useState(false);
 
   /* ── SIMULATION ───────────────────────────────────────────── */
   function startSim(algo: DiskAlgorithm) {
+    if (autoIntervalRef.current) { clearInterval(autoIntervalRef.current); autoIntervalRef.current = null; }
     setAlgorithm(algo);
     const reqs = activeRequests();
     const head = activeHead();
@@ -83,6 +113,38 @@ export default function DiskPage() {
     setScreen('simulation');
   }
 
+  function diskStepReason(algo: DiskAlgorithm, prev: number, next: number, move: number, result: DiskSimResult, stepIdx: number): string {
+    const serviced = result.order.slice(0, stepIdx);
+    const pending = result.requests.filter(r => !serviced.includes(r) && r !== next);
+    const isBoundary199 = next === DISK_MAX_TRACK && !result.requests.includes(DISK_MAX_TRACK);
+    const isWrap0 = next === 0 && !result.requests.includes(0);
+
+    if (algo === 'fcfs') {
+      return `FCFS: services requests in the original arrival order. Request #${stepIdx + 1}: track ${next} (${move} tracks from ${prev}).`;
+    }
+    if (algo === 'sstf') {
+      const options = pending.slice(0, 4).map(r => `${r}(${Math.abs(r - prev)})`).join(', ');
+      return `SSTF: from track ${prev}, closest pending request is track ${next} (${move} tracks). Other pending: [${options || 'none'}].`;
+    }
+    if (algo === 'scan') {
+      if (isBoundary199) return `SCAN travels to physical disk boundary (track ${DISK_MAX_TRACK}) before reversing — no pending request here, but SCAN must reach the end.`;
+      const dir = next >= prev ? 'upward' : 'downward';
+      return `SCAN sweeping ${dir}. Track ${next} is the next pending request in sweep direction (${move} tracks from ${prev}).`;
+    }
+    if (algo === 'cscan') {
+      if (isBoundary199) return `C-SCAN reaches disk boundary (track ${DISK_MAX_TRACK}) — sweep end. Next: circular jump to track 0.`;
+      if (isWrap0) return `C-SCAN circular wrap: head jumps from ${prev} to track 0 (${move} tracks). No requests serviced on return. Sweeping upward again.`;
+      return `C-SCAN sweeping upward. Track ${next} is the next pending request (${move} tracks from ${prev}).`;
+    }
+    if (algo === 'look') {
+      const dir = next >= prev ? 'upward' : 'downward';
+      const pendingInDir = pending.filter(r => dir === 'upward' ? r > prev : r < prev);
+      const reverseNote = pendingInDir.length === 0 ? ' No more requests in this direction — reversing.' : '';
+      return `LOOK sweeping ${dir} (reverses at last request, not disk boundary).${reverseNote} Track ${next} is next (${move} tracks from ${prev}).`;
+    }
+    return `Head moves ${move} tracks: ${prev} → ${next}.`;
+  }
+
   function doSimStep(result: DiskSimResult, rev: number) {
     if (rev >= result.order.length) {
       setSimMessage('All requests serviced. Press RESTART to run again.');
@@ -93,9 +155,11 @@ export default function DiskPage() {
     }
     const prev = rev === 0 ? result.headStart : result.order[rev - 1];
     const next = result.order[rev];
+    const move = Math.abs(next - prev);
     const newRev = rev + 1;
     setRevealed(newRev);
-    setSimMessage(`Head moves from track ${prev} to track ${next} (${Math.abs(next - prev)} tracks).`);
+    const reason = diskStepReason(algorithm, prev, next, move, result, rev);
+    setSimMessage(`${reason} (step ${newRev}/${result.order.length}, movement: ${move})`);
     if (newRev === result.order.length) {
       setSimMessage(`${getDiskAlgoLabel(algorithm)} complete. Total movement: ${result.totalMovement} tracks.`);
       const bd = generateDiskBreakdown(algorithm, result);
@@ -106,7 +170,11 @@ export default function DiskPage() {
 
   function toggleDiskAuto() {
     if (!simResult) return;
-    if (autoRunning) { setAutoRunning(false); return; }
+    if (autoRunning) {
+      setAutoRunning(false);
+      if (autoIntervalRef.current) { clearInterval(autoIntervalRef.current); autoIntervalRef.current = null; }
+      return;
+    }
     setAutoRunning(true);
     let rev = revealed;
     const result = simResult;
@@ -114,24 +182,30 @@ export default function DiskPage() {
       if (rev >= result.order.length) { clearInterval(id); setAutoRunning(false); return; }
       const prev = rev === 0 ? result.headStart : result.order[rev - 1];
       const next = result.order[rev];
+      const move = Math.abs(next - prev);
       rev++;
       setRevealed(rev);
-      setSimMessage(`Head moves from track ${prev} to track ${next} (${Math.abs(next - prev)} tracks).`);
+      const reason = diskStepReason(algorithm, prev, next, move, result, rev - 1);
+      setSimMessage(`${reason} (step ${rev}/${result.order.length}, movement: ${move})`);
       if (rev === result.order.length) {
         clearInterval(id);
+        autoIntervalRef.current = null;
         setAutoRunning(false);
         setSimMessage(`${getDiskAlgoLabel(algorithm)} complete. Total movement: ${result.totalMovement} tracks.`);
         const bd = generateDiskBreakdown(algorithm, result);
         setBreakdown(bd);
       }
     }, 700);
+    autoIntervalRef.current = id;
   }
 
   /* ── PLAY ─────────────────────────────────────────────────── */
   function startPlay(algo: DiskAlgorithm) {
     setAlgorithm(algo);
-    const reqs = activeRequests();
-    const head = activeHead();
+    const sets = DISK_SETS[stage];
+    const chosen = sets[Math.floor(Math.random() * sets.length)];
+    const reqs = [...chosen.requests];
+    const head = chosen.headStart;
     const order = computeDiskOrder(algo, reqs, head);
     setPlayRequests(reqs);
     setPlayOrder(order);
@@ -142,17 +216,41 @@ export default function DiskPage() {
     setScore(0);
     setPlayDone(false);
     setTotalMoved(0);
-    setGameStarted(false);
     setTimerKey(k => k + 1);
-    setTimerRunning(false);
-    setPlayMessage('Press START GAME to begin!');
+    setTimerRunning(true);
+    setPlayMessage(`Click the next track the head should visit!`);
     setScreen('play');
   }
 
-  function handleStartGame() {
-    setGameStarted(true);
-    setTimerRunning(true);
-    setPlayMessage(`Click the next track the head should visit!`);
+  function advancePastBoundaries(step: number, visited: number[], head: number, moved: number, h: number, s: number) {
+    if (step >= playOrder.length) {
+      setPlayDone(true);
+      setTimerRunning(false);
+      setPlayMessage(`Complete! Total head movement: ${moved} tracks. Score: ${s}.`);
+      saveDiskPlay(s, h, moved);
+      return;
+    }
+    const nextTrack = playOrder[step];
+    if (!playRequests.includes(nextTrack)) {
+      const movement = Math.abs(nextTrack - head);
+      const newMoved = moved + movement;
+      const newVisited = [...visited, nextTrack];
+      setPlayVisited(newVisited);
+      setPlayHead(nextTrack);
+      setTotalMoved(newMoved);
+      setPlayStep(step + 1);
+      const msg = nextTrack === 199
+        ? `Head reaches track 199 (disk boundary) — reversing direction.`
+        : nextTrack === 0
+        ? `Head reaches track 0 (disk boundary) — C-SCAN wraps back to start.`
+        : `Head auto-advances to track ${nextTrack}.`;
+      setPlayMessage(msg);
+      setTimeout(() => advancePastBoundaries(step + 1, newVisited, nextTrack, newMoved, h, s), 800);
+    } else {
+      setTimerKey(k => k + 1);
+      setTimerRunning(true);
+      setPlayMessage(`Click the next track the head should visit!`);
+    }
   }
 
   function handleTrackClick(track: number, step: number, visited: number[], head: number, moved: number, h: number, s: number) {
@@ -181,11 +279,7 @@ export default function DiskPage() {
         setPlayMessage(`Complete! Total head movement: ${newMoved} tracks. Score: ${newScore}.`);
         saveDiskPlay(newScore, h, newMoved);
       } else {
-        setTimeout(() => {
-          setTimerKey(k => k + 1);
-          setTimerRunning(true);
-          setPlayMessage(`Click the next track the head should visit!`);
-        }, 700);
+        setTimeout(() => advancePastBoundaries(newStep, newVisited, track, newMoved, h, newScore), 700);
       }
     } else {
       setFlashWrong(track);
@@ -233,17 +327,19 @@ export default function DiskPage() {
         setTimerRunning(false);
         saveDiskPlay(Math.max(0, s - 5), newHearts, newMoved);
       } else {
-        setTimeout(() => {
-          setTimerKey(k => k + 1);
-          setTimerRunning(true);
-          setPlayMessage('Click the next track!');
-        }, 800);
+        setTimeout(() => advancePastBoundaries(newStep, newVisited, correct, newMoved, newHearts, Math.max(0, s - 5)), 800);
       }
     }
   }
 
   async function saveDiskPlay(s: number, h: number, moved: number) {
-    // Database saving has been disabled as requested
+    try {
+      await fetch('/api/disk/play', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ algorithm, score: s, hearts: h, headStart: activeHead(), totalMovement: moved }),
+      });
+    } catch { /* silent */ }
   }
 
   /* ── RENDER ───────────────────────────────────────────────── */
@@ -252,7 +348,7 @@ export default function DiskPage() {
       <div style={{ maxWidth: 700, width: '100%', padding: 24 }}>
         <h1 className="font-pixel" style={{ color: 'var(--yellow)', textAlign: 'center', fontSize: 'clamp(18px,3vw,32px)', marginBottom: 32 }}>DISK SCHEDULING</h1>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px,1fr))', gap: 18, marginBottom: 24 }}>
-          <button id="diskPlayMode" className="topic-card cyan-card" onClick={() => { setMode('play'); setScreen('algoSelect'); }}>
+          <button id="diskPlayMode" className="topic-card cyan-card" onClick={() => { setMode('play'); setScreen('stageSelect'); }}>
             <span className="topic-icon">▶</span><strong className="topic-title">PLAY</strong>
             <small className="topic-desc">Timed — click the correct next disk track mark</small>
           </button>
@@ -264,6 +360,19 @@ export default function DiskPage() {
         <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← BACK</button></div>
       </div>
     </div>
+  );
+
+  if (screen === 'stageSelect') return (
+    <DifficultySelect
+      title="DISK SCHEDULING"
+      onSelect={d => { setStage(d); setScreen('algoSelect'); }}
+      onBack={() => setScreen('modeSelect')}
+      descriptions={{
+        easy:   `5 track requests · ${TIMER_BY_DIFFICULTY.easy}s per step`,
+        normal: `8 track requests · ${TIMER_BY_DIFFICULTY.normal}s per step`,
+        hard:   `11 track requests · ${TIMER_BY_DIFFICULTY.hard}s per step`,
+      }}
+    />
   );
 
   if (screen === 'algoSelect') {
@@ -279,7 +388,7 @@ export default function DiskPage() {
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <h1 className="font-pixel" style={{ color: 'var(--yellow)', textAlign: 'center', fontSize: 'clamp(16px,2.5vw,28px)', marginBottom: 8 }}>DISK SCHEDULING</h1>
           <p style={{ textAlign: 'center', color: 'var(--cyan)', marginBottom: 24 }}>Choose a disk scheduling algorithm.</p>
-          <details className="input-form-wrapper" style={{ marginBottom: 20 }}>
+          {mode === 'simulation' && <details className="input-form-wrapper" style={{ marginBottom: 20 }}>
             <summary>CUSTOM DATA INPUT (optional override)</summary>
             <div style={{ marginTop: 14 }}>
               <div className="form-field">
@@ -309,7 +418,7 @@ export default function DiskPage() {
                 </>
               )}
             </div>
-          </details>
+          </details>}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px,1fr))', gap: 14, marginBottom: 24 }}>
             {algos.map(a => (
               <button key={a.id} id={`disk-algo-${a.id}`} className="algo-card" onClick={() => mode === 'simulation' ? startSim(a.id) : startPlay(a.id)}>
@@ -317,7 +426,7 @@ export default function DiskPage() {
               </button>
             ))}
           </div>
-          <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => setScreen('modeSelect')}>← BACK</button></div>
+          <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => setScreen(mode === 'play' ? 'stageSelect' : 'modeSelect')}>← BACK</button></div>
         </div>
       </div>
     );
@@ -329,10 +438,7 @@ export default function DiskPage() {
     const done = revealed >= simResult.order.length;
     return (
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
-        <header className="game-header">
-          <div><h1>DISK SCHEDULING</h1><p>{getDiskAlgoLabel(algorithm)} — SIMULATION</p></div>
-          <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>EXIT</button>
-        </header>
+        <GameHeader moduleName="DISK SCHEDULING" algorithmLabel={getDiskAlgoLabel(algorithm)} modeLabel="SIMULATION" onExit={() => router.push('/?topic=true')} />
         <main className="simulation-layout">
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {/* Request queue */}
@@ -405,7 +511,7 @@ export default function DiskPage() {
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <h2 style={{ fontSize: 14 }}>SIM CONTROL</h2>
             <button className="btn" onClick={() => simResult && doSimStep(simResult, revealed)} disabled={done}>STEP</button>
-            <button className="btn btn-pink" onClick={toggleDiskAuto} disabled={done}>{autoRunning ? 'STOP AUTO' : 'AUTO RUN'}</button>
+            <button className={`btn ${autoRunning ? 'btn-yellow' : 'btn-pink'}`} onClick={toggleDiskAuto} disabled={done}>{autoRunning ? 'STOP AUTO' : 'AUTO RUN'}</button>
             <button className="btn btn-sm" onClick={() => startSim(algorithm)}>RESTART</button>
             <div className="rule-box">
               <span>ALGORITHM INFO</span>
@@ -423,10 +529,7 @@ export default function DiskPage() {
     const nextCorrect = playStep < playOrder.length ? playOrder[playStep] : -1;
     return (
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
-        <header className="game-header">
-          <div><h1>DISK SCHEDULING</h1><p>{getDiskAlgoLabel(algorithm)} — PLAY MODE</p></div>
-          <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>EXIT</button>
-        </header>
+        <GameHeader moduleName="DISK SCHEDULING" algorithmLabel={getDiskAlgoLabel(algorithm)} modeLabel="PLAY MODE" onExit={() => router.push('/?topic=true')} />
         <main className="play-layout">
           <section className="panel">
             <h2 style={{ fontSize: 14 }}>SYSTEM</h2>
@@ -441,7 +544,7 @@ export default function DiskPage() {
             {!playDone && (
               <TimerBar
                 key={timerKey}
-                seconds={TIME_LIMIT}
+                seconds={TIMER_BY_DIFFICULTY[stage]}
                 running={timerRunning}
                 onExpire={() => handleDiskTimeout(playStep, playVisited, playHead, totalMoved, hearts, score)}
               />
@@ -465,10 +568,10 @@ export default function DiskPage() {
                       style={{
                         left: `${pct(t)}%`,
                         background: isRight ? 'var(--success)' : isWrong ? 'var(--danger)' : visited ? 'var(--success)' : 'var(--violet)',
-                        cursor: gameStarted && !playDone && !visited ? 'pointer' : 'default',
+                        cursor: !playDone && !visited ? 'pointer' : 'default',
                         width: 4,
                       }}
-                      onClick={() => gameStarted && !playDone && !visited && handleTrackClick(t, playStep, playVisited, playHead, totalMoved, hearts, score)}
+                      onClick={() => !playDone && !visited && handleTrackClick(t, playStep, playVisited, playHead, totalMoved, hearts, score)}
                     >
                       <span style={{ fontWeight: 'bold', color: t === nextCorrect && !playDone ? 'var(--yellow)' : 'var(--white)' }}>{t}</span>
                     </div>
@@ -500,11 +603,6 @@ export default function DiskPage() {
               </JustifiedText>
             </div>
             <div className="message-box" style={{ fontSize: 12 }}>{playMessage}</div>
-            
-            {!gameStarted && !playDone && (
-              <button className="btn btn-yellow" onClick={handleStartGame}>START GAME</button>
-            )}
-
             {playDone && (
               <>
                 <button className="btn" onClick={() => startPlay(algorithm)}>PLAY AGAIN</button>

@@ -22,11 +22,13 @@ export function computeCpuGantt(
   if (algorithm === 'fcfs') {
     const order = [...procs].sort((a, b) => a.arrival - b.arrival);
     let time = 0;
-    return order.map(p => {
+    return order.map((p, i) => {
       const start = Math.max(time, p.arrival);
       const end = start + p.burst;
+      const idleNote = start > time && i > 0 ? ` CPU idle until t=${start}.` : '';
       time = end;
-      return { name: p.name, start, end };
+      const reason = `FCFS: position ${i + 1} in arrival order.${idleNote} ${p.name} (arrival: ${p.arrival}, burst: ${p.burst}).`;
+      return { name: p.name, start, end, reason };
     });
   }
 
@@ -41,11 +43,22 @@ export function computeCpuGantt(
         time = Math.min(...remaining.map(p => p.arrival));
         continue;
       }
-      const next =
-        algorithm === 'sjf'
-          ? arrived.reduce((a, b) => (b.burst < a.burst ? b : a))
-          : arrived.reduce((a, b) => (b.priority < a.priority ? b : a));
-      gantt.push({ name: next.name, start: time, end: time + next.burst });
+      let next: typeof arrived[0];
+      let reason: string;
+      if (algorithm === 'sjf') {
+        next = arrived.reduce((a, b) => (b.burst < a.burst ? b : a));
+        const readyStr = arrived.map(p => `${p.name}(burst:${p.burst})`).join(', ');
+        reason = arrived.length === 1
+          ? `SJF: at t=${time}, only ${next.name} has arrived (burst: ${next.burst}).`
+          : `SJF: at t=${time}, ready — [${readyStr}]. ${next.name} has shortest burst (${next.burst}) → selected.`;
+      } else {
+        next = arrived.reduce((a, b) => (b.priority < a.priority ? b : a));
+        const readyStr = arrived.map(p => `${p.name}(pri:${p.priority})`).join(', ');
+        reason = arrived.length === 1
+          ? `Priority: at t=${time}, only ${next.name} has arrived (priority: ${next.priority}).`
+          : `Priority: at t=${time}, ready — [${readyStr}]. ${next.name} has highest priority (lowest number: ${next.priority}) → selected.`;
+      }
+      gantt.push({ name: next.name, start: time, end: time + next.burst, reason });
       time += next.burst;
       remaining.splice(remaining.indexOf(next), 1);
     }
@@ -75,7 +88,11 @@ export function computeCpuGantt(
       const i = queue.shift()!;
       const p = remaining[i];
       const run = Math.min(quantum, p.left);
-      gantt.push({ name: p.name, start: time, end: time + run });
+      const leftAfter = p.left - run;
+      const reason = leftAfter > 0
+        ? `RR: ${p.name} next in queue. Runs ${run}/${quantum}-unit quantum. ${leftAfter} burst unit(s) remaining — returns to back of queue.`
+        : `RR: ${p.name} next in queue. Runs final ${run} unit(s) (burst: ${p.burst}). Process completes.`;
+      gantt.push({ name: p.name, start: time, end: time + run, reason });
       time += run;
       p.left -= run;
       addArrived();

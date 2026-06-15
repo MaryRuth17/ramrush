@@ -2,7 +2,7 @@
 
 // app/cpu/page.tsx — CPU Scheduling topic page (Play + Simulation + Custom Input)
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { TimerBar } from '@/components/ui/TimerBar';
 import { HeartDisplay } from '@/components/ui/HeartDisplay';
@@ -20,11 +20,92 @@ import {
 import { generateCpuBreakdown } from '@/lib/cpu/breakdown';
 import type { CpuAlgorithm, CpuProcess, GanttBlock, CpuStats } from '@/lib/cpu/types';
 import type { BreakdownStep } from '@/lib/cpu/breakdown';
+import { MAX_HEARTS, TIMER_BY_DIFFICULTY } from '@/lib/game/constants';
+import { DifficultySelect } from '@/components/ui/DifficultySelect';
+import { GameHeader } from '@/components/ui/GameHeader';
 
-type Screen = 'modeSelect' | 'algoSelect' | 'play' | 'simulation';
+type Screen = 'modeSelect' | 'algoSelect' | 'play' | 'simulation' | 'stageSelect';
 
-const MAX_HEARTS = 3;
-const TIME_LIMIT = 5;
+const CPU_SETS: Record<'easy' | 'normal' | 'hard', CpuProcess[][]> = {
+  easy: [
+    // Set A — clear ordering, good for teaching
+    [
+      { name: 'P1', arrival: 0, burst: 4, priority: 2 },
+      { name: 'P2', arrival: 1, burst: 3, priority: 1 },
+      { name: 'P3', arrival: 2, burst: 5, priority: 3 },
+    ],
+    // Set B — SJF tie at t=0 (P1 and P2 equal burst, tiebreak by arrival/name)
+    [
+      { name: 'P1', arrival: 0, burst: 3, priority: 2 },
+      { name: 'P2', arrival: 0, burst: 3, priority: 1 },
+      { name: 'P3', arrival: 2, burst: 6, priority: 3 },
+    ],
+    // Set C — priority order inverts FCFS order
+    [
+      { name: 'P1', arrival: 0, burst: 5, priority: 1 },
+      { name: 'P2', arrival: 1, burst: 2, priority: 3 },
+      { name: 'P3', arrival: 3, burst: 4, priority: 2 },
+    ],
+  ],
+  normal: [
+    // Set A — varied burst, staggered arrivals
+    [
+      { name: 'P1', arrival: 0, burst: 5, priority: 3 },
+      { name: 'P2', arrival: 1, burst: 3, priority: 1 },
+      { name: 'P3', arrival: 2, burst: 8, priority: 4 },
+      { name: 'P4', arrival: 3, burst: 6, priority: 2 },
+      { name: 'P5', arrival: 4, burst: 4, priority: 5 },
+    ],
+    // Set B — P2 and P4 tie on burst=2 for SJF
+    [
+      { name: 'P1', arrival: 0, burst: 6, priority: 2 },
+      { name: 'P2', arrival: 2, burst: 2, priority: 4 },
+      { name: 'P3', arrival: 3, burst: 8, priority: 1 },
+      { name: 'P4', arrival: 4, burst: 2, priority: 3 },
+      { name: 'P5', arrival: 5, burst: 5, priority: 5 },
+    ],
+    // Set C — priority vs SJF produce very different orders
+    [
+      { name: 'P1', arrival: 0, burst: 4, priority: 3 },
+      { name: 'P2', arrival: 1, burst: 7, priority: 1 },
+      { name: 'P3', arrival: 2, burst: 3, priority: 4 },
+      { name: 'P4', arrival: 3, burst: 6, priority: 2 },
+      { name: 'P5', arrival: 5, burst: 5, priority: 5 },
+    ],
+  ],
+  hard: [
+    // Set A — two processes arrive simultaneously at t=0
+    [
+      { name: 'P1', arrival: 0, burst: 6, priority: 4 },
+      { name: 'P2', arrival: 0, burst: 2, priority: 1 },
+      { name: 'P3', arrival: 1, burst: 8, priority: 3 },
+      { name: 'P4', arrival: 2, burst: 3, priority: 5 },
+      { name: 'P5', arrival: 3, burst: 5, priority: 2 },
+      { name: 'P6', arrival: 4, burst: 4, priority: 6 },
+      { name: 'P7', arrival: 5, burst: 7, priority: 1 },
+    ],
+    // Set B — multiple SJF ties, also P1 and P2 tie at t=0
+    [
+      { name: 'P1', arrival: 0, burst: 5, priority: 3 },
+      { name: 'P2', arrival: 0, burst: 5, priority: 1 },
+      { name: 'P3', arrival: 1, burst: 4, priority: 2 },
+      { name: 'P4', arrival: 2, burst: 4, priority: 4 },
+      { name: 'P5', arrival: 3, burst: 6, priority: 5 },
+      { name: 'P6', arrival: 4, burst: 3, priority: 2 },
+      { name: 'P7', arrival: 5, burst: 6, priority: 3 },
+    ],
+    // Set C — late simultaneous arrivals at t=6
+    [
+      { name: 'P1', arrival: 0, burst: 7, priority: 4 },
+      { name: 'P2', arrival: 0, burst: 3, priority: 2 },
+      { name: 'P3', arrival: 2, burst: 5, priority: 1 },
+      { name: 'P4', arrival: 3, burst: 4, priority: 3 },
+      { name: 'P5', arrival: 5, burst: 6, priority: 5 },
+      { name: 'P6', arrival: 6, burst: 2, priority: 2 },
+      { name: 'P7', arrival: 6, burst: 8, priority: 6 },
+    ],
+  ],
+};
 
 const DEFAULT_PROCESSES_COPY: CpuProcess[] = DEFAULT_CPU_PROCESSES.map(p => ({ ...p }));
 
@@ -33,6 +114,7 @@ export default function CpuPage() {
   const [screen, setScreen] = useState<Screen>('modeSelect');
   const [mode, setMode] = useState<'play' | 'simulation'>('simulation');
   const [algorithm, setAlgorithm] = useState<CpuAlgorithm>('fcfs');
+  const [stage, setStage] = useState<'easy' | 'normal' | 'hard'>('normal');
 
   // Custom process input
   const [customProcesses, setCustomProcesses] = useState<CpuProcess[]>(DEFAULT_PROCESSES_COPY);
@@ -40,6 +122,7 @@ export default function CpuPage() {
   const [useCustom, setUseCustom] = useState(false);
 
   // Simulation state
+  const autoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [gantt, setGantt] = useState<GanttBlock[]>([]);
   const [stats, setStats] = useState<CpuStats | null>(null);
   const [revealed, setRevealed] = useState(0);
@@ -60,7 +143,11 @@ export default function CpuPage() {
   const [playDone, setPlayDone] = useState(false);
   const [flashRight, setFlashRight] = useState<string | null>(null);
   const [flashWrong, setFlashWrong] = useState<string | null>(null);
-  const [gameStarted, setGameStarted] = useState(false);
+
+  // RR-specific play state: remaining burst per process, ordered ready queue, and admission tracker
+  const [rrRemaining, setRrRemaining] = useState<Record<string, number>>({});
+  const [rrQueue, setRrQueue] = useState<string[]>([]);
+  const [rrAdded, setRrAdded] = useState<Set<string>>(new Set());
 
   const activeProcesses = useCallback(() => {
     return customProcesses.length > 0 && useCustom ? customProcesses : DEFAULT_PROCESSES_COPY;
@@ -68,6 +155,7 @@ export default function CpuPage() {
 
   /* ── SIMULATION MODE ──────────────────────────────────────── */
   function startSimulation(algo: CpuAlgorithm) {
+    if (autoIntervalRef.current) { clearInterval(autoIntervalRef.current); autoIntervalRef.current = null; }
     setAlgorithm(algo);
     const procs = activeProcesses();
     const g = computeCpuGantt(algo, procs, quantum);
@@ -96,7 +184,7 @@ export default function CpuPage() {
     const next = rev + 1;
     setRevealed(next);
     const block = g[next - 1];
-    setSimMessage(`${block.name} runs from time ${block.start} to ${block.end}.`);
+    setSimMessage(`${block.reason} Runs t=${block.start}–${block.end}.`);
     if (next === g.length) {
       const s = computeCpuStats(g, activeProcesses());
       setStats(s);
@@ -108,21 +196,18 @@ export default function CpuPage() {
   }
 
   function toggleAuto() {
-    if (autoRunning) { setAutoRunning(false); return; }
+    if (autoRunning) {
+      setAutoRunning(false);
+      if (autoIntervalRef.current) { clearInterval(autoIntervalRef.current); autoIntervalRef.current = null; }
+      return;
+    }
     setAutoRunning(true);
-    const run = () => {
-      setRevealed(prev => {
-        if (prev >= gantt.length) { setAutoRunning(false); return prev; }
-        simStep(gantt, prev);
-        return prev;
-      });
-    };
     const id = setInterval(() => {
       setRevealed(prev => {
         if (prev >= gantt.length) { clearInterval(id); setAutoRunning(false); return prev; }
         const next = prev + 1;
         const block = gantt[next - 1];
-        setSimMessage(`${block.name} runs from time ${block.start} to ${block.end}.`);
+        setSimMessage(`${block.reason} Runs t=${block.start}–${block.end}.`);
         if (next === gantt.length) {
           clearInterval(id);
           setAutoRunning(false);
@@ -135,33 +220,94 @@ export default function CpuPage() {
         return next;
       });
     }, 700);
+    autoIntervalRef.current = id;
   }
 
   /* ── PLAY MODE ────────────────────────────────────────────── */
   function startPlay(algo: CpuAlgorithm) {
     setAlgorithm(algo);
-    const procs = activeProcesses();
+    const sets = CPU_SETS[stage];
+    const procs = sets[Math.floor(Math.random() * sets.length)];
     setPlayProcesses(procs);
     setCompletedNames([]);
-    setCurrentTime(0);
     setHearts(MAX_HEARTS);
     setScore(0);
     setPlayDone(false);
-    setGameStarted(false);
     setTimerKey(k => k + 1);
-    setTimerRunning(false);
-    setPlayMessage('Press START GAME to begin!');
+    setTimerRunning(true);
+    setPlayMessage('Click the process that should run next!');
+
+    if (algo === 'rr') {
+      // Mirror the reference engine's state: remaining burst, FIFO queue, admission set
+      const rem: Record<string, number> = {};
+      procs.forEach(p => { rem[p.name] = p.burst; });
+      const added = new Set<string>();
+      // If nothing arrives at time 0, auto-advance to first arrival (idle time)
+      const initTime = procs.some(p => p.arrival <= 0) ? 0 : Math.min(...procs.map(p => p.arrival));
+      const initQueue = procs
+        .filter(p => p.arrival <= initTime)
+        .sort((a, b) => a.arrival - b.arrival)
+        .map(p => p.name);
+      initQueue.forEach(n => added.add(n));
+      setRrRemaining(rem);
+      setRrQueue(initQueue);
+      setRrAdded(added);
+      setCurrentTime(initTime);
+    } else {
+      setRrRemaining({});
+      setRrQueue([]);
+      setRrAdded(new Set());
+      setCurrentTime(0);
+    }
+
     setScreen('play');
   }
 
-  function handleStartGame() {
-    setGameStarted(true);
-    setTimerRunning(true);
-    setPlayMessage('Click the process that should run next!');
+  function getCorrectAnswer(time: number, done: string[]): string | null {
+    if (algorithm === 'rr') return rrQueue[0] ?? null;
+    return getNextCpuProcess(algorithm, playProcesses, done, time, quantum);
   }
 
-  function getCorrectAnswer(time: number, done: string[]): string | null {
-    return getNextCpuProcess(algorithm, playProcesses, done, time, quantum);
+  // Mirrors computeCpuGantt's queue advancement: deduct quantum, re-queue partial, admit arrivals, handle idle.
+  function advanceRrState(name: string, time: number): {
+    nextTime: number;
+    newRemaining: Record<string, number>;
+    newQueue: string[];
+    newAdded: Set<string>;
+    newDone: string[];
+    allDone: boolean;
+  } {
+    const rem = rrRemaining[name];
+    const runTime = Math.min(quantum, rem);
+    const newRem = rem - runTime;
+    let nextTime = time + runTime;
+
+    const newRemaining = { ...rrRemaining, [name]: newRem };
+    const newAdded = new Set(rrAdded);
+
+    // Remove the head process, then admit newly arrived processes (arrival order), then re-queue if partial
+    let newQueue = rrQueue.slice(1);
+    playProcesses
+      .filter(p => p.arrival > time && p.arrival <= nextTime && !newAdded.has(p.name))
+      .sort((a, b) => a.arrival - b.arrival)
+      .forEach(p => { newQueue.push(p.name); newAdded.add(p.name); });
+    if (newRem > 0) newQueue.push(name);
+
+    // Auto-advance past idle time when queue empties but unadmitted processes remain
+    if (newQueue.length === 0) {
+      const notYetArrived = playProcesses.filter(p => !newAdded.has(p.name) && newRemaining[p.name] > 0);
+      if (notYetArrived.length > 0) {
+        nextTime = Math.min(...notYetArrived.map(p => p.arrival));
+        notYetArrived
+          .filter(p => p.arrival <= nextTime)
+          .sort((a, b) => a.arrival - b.arrival)
+          .forEach(p => { newQueue.push(p.name); newAdded.add(p.name); });
+      }
+    }
+
+    const newDone = playProcesses.filter(p => newRemaining[p.name] === 0).map(p => p.name);
+    const allDone = Object.values(newRemaining).every(r => r === 0);
+    return { nextTime, newRemaining, newQueue, newAdded, newDone, allDone };
   }
 
   function handleProcessClick(name: string, time: number, done: string[]) {
@@ -171,30 +317,48 @@ export default function CpuPage() {
     setTimerRunning(false);
 
     if (name === correct) {
-      // Find burst time to advance clock
-      const p = playProcesses.find(x => x.name === name)!;
-      const nextTime = time + (algorithm === 'rr' ? Math.min(quantum, p.burst) : p.burst);
-      const nextDone = [...done, name];
       setFlashRight(name);
       setTimeout(() => setFlashRight(null), 500);
       setScore(s => s + 10);
-      setCompletedNames(nextDone);
-      setCurrentTime(nextTime);
-      setPlayMessage(`✓ Correct! ${name} runs next under ${getCpuAlgoLabel(algorithm)}.`);
 
-      // Check if all done
-      const remaining = playProcesses.filter(p => !nextDone.includes(p.name) && p.arrival <= nextTime);
-      if (nextDone.length >= playProcesses.length || remaining.length === 0) {
-        setPlayDone(true);
-        setTimerRunning(false);
-        setPlayMessage('All processes scheduled! Run complete.');
-        savePlaySession(score + 10, hearts);
+      if (algorithm === 'rr') {
+        const runTime = Math.min(quantum, rrRemaining[name]);
+        const { nextTime, newRemaining, newQueue, newAdded, newDone, allDone } = advanceRrState(name, time);
+        setRrRemaining(newRemaining);
+        setRrQueue(newQueue);
+        setRrAdded(newAdded);
+        setCurrentTime(nextTime);
+        setCompletedNames(newDone);
+        setPlayMessage(`✓ Correct! ${name} runs for ${runTime} unit(s) under Round Robin.`);
+        if (allDone) {
+          setPlayDone(true);
+          setTimerRunning(false);
+          setPlayMessage('All processes scheduled! Run complete.');
+          savePlaySession(score + 10, hearts);
+        } else {
+          setTimeout(() => { setTimerKey(k => k + 1); setTimerRunning(true); setPlayMessage('Click the process that should run next!'); }, 700);
+        }
       } else {
-        setTimeout(() => {
-          setTimerKey(k => k + 1);
-          setTimerRunning(true);
-          setPlayMessage('Click the process that should run next!');
-        }, 700);
+        const p = playProcesses.find(x => x.name === name)!;
+        const nextTime = time + p.burst;
+        const nextDone = [...done, name];
+        setCompletedNames(nextDone);
+        setCurrentTime(nextTime);
+        setPlayMessage(`✓ Correct! ${name} runs next under ${getCpuAlgoLabel(algorithm)}.`);
+        if (nextDone.length >= playProcesses.length) {
+          setPlayDone(true);
+          setTimerRunning(false);
+          setPlayMessage('All processes scheduled! Run complete.');
+          savePlaySession(score + 10, hearts);
+        } else {
+          // Auto-advance currentTime past idle gap if no process has arrived yet
+          const arrivedNow = playProcesses.filter(p => !nextDone.includes(p.name) && p.arrival <= nextTime);
+          if (arrivedNow.length === 0) {
+            const nextArrival = Math.min(...playProcesses.filter(p => !nextDone.includes(p.name)).map(p => p.arrival));
+            setCurrentTime(nextArrival);
+          }
+          setTimeout(() => { setTimerKey(k => k + 1); setTimerRunning(true); setPlayMessage('Click the process that should run next!'); }, 700);
+        }
       }
     } else {
       setFlashWrong(name);
@@ -209,10 +373,7 @@ export default function CpuPage() {
         setPlayMessage('GAME OVER! No hearts remaining.');
         savePlaySession(Math.max(0, score - 5), 0);
       } else {
-        setTimeout(() => {
-          setTimerKey(k => k + 1);
-          setTimerRunning(true);
-        }, 700);
+        setTimeout(() => { setTimerKey(k => k + 1); setTimerRunning(true); }, 700);
       }
     }
   }
@@ -221,13 +382,35 @@ export default function CpuPage() {
     const newHearts = hearts - 1;
     setHearts(newHearts);
     setScore(s => Math.max(0, s - 5));
-    // Skip current arrived process
+
+    if (algorithm === 'rr') {
+      const head = rrQueue[0];
+      if (head) {
+        const { nextTime, newRemaining, newQueue, newAdded, newDone, allDone } = advanceRrState(head, time);
+        setRrRemaining(newRemaining);
+        setRrQueue(newQueue);
+        setRrAdded(newAdded);
+        setCurrentTime(nextTime);
+        setCompletedNames(newDone);
+        setPlayMessage(`TIME OUT! ${head} was skipped. -1 heart.`);
+        if (allDone || newHearts <= 0) {
+          setPlayDone(true);
+          setPlayMessage(allDone ? 'All processes scheduled! Run complete.' : 'GAME OVER! No hearts remaining.');
+          savePlaySession(Math.max(0, score - 5), newHearts <= 0 ? 0 : newHearts);
+          return;
+        }
+      }
+      setTimeout(() => { setTimerKey(k => k + 1); setTimerRunning(true); }, 800);
+      return;
+    }
+
+    // Non-RR timeout: auto-advance the correct non-preemptive process
     const arrived = playProcesses.filter(p => !done.includes(p.name) && p.arrival <= time);
     if (arrived.length > 0) {
       const correct = getCorrectAnswer(time, done) ?? arrived[0].name;
       const p = playProcesses.find(x => x.name === correct)!;
       const nextDone = [...done, correct];
-      const nextTime = time + (algorithm === 'rr' ? Math.min(quantum, p.burst) : p.burst);
+      const nextTime = time + p.burst;
       setCompletedNames(nextDone);
       setCurrentTime(nextTime);
       setPlayMessage(`TIME OUT! ${correct} was skipped. -1 heart.`);
@@ -237,20 +420,38 @@ export default function CpuPage() {
       setPlayMessage('GAME OVER! No hearts remaining.');
       savePlaySession(Math.max(0, score - 5), 0);
     } else {
-      setTimeout(() => {
-        setTimerKey(k => k + 1);
-        setTimerRunning(true);
-      }, 800);
+      setTimeout(() => { setTimerKey(k => k + 1); setTimerRunning(true); }, 800);
     }
   }
 
   async function savePlaySession(finalScore: number, finalHearts: number) {
-    // Database saving has been disabled as requested
+    try {
+      await fetch('/api/cpu/play', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ algorithm, score: finalScore, hearts: finalHearts, quantum }),
+      });
+    } catch { /* silent */ }
   }
 
   /* ── RENDER ───────────────────────────────────────────────── */
   if (screen === 'modeSelect') {
-    return <ModeSelect onBack={() => router.push('/?topic=true')} onSelectMode={(m) => { setMode(m); setScreen('algoSelect'); }} />;
+    return <ModeSelect onBack={() => router.push('/?topic=true')} onSelectMode={(m) => { setMode(m); setScreen(m === 'play' ? 'stageSelect' : 'algoSelect'); }} />;
+  }
+
+  if (screen === 'stageSelect') {
+    return (
+      <DifficultySelect
+        title="CPU SCHEDULING"
+        descriptions={{
+          easy:   '3 processes · 8s timer',
+          normal: '5 processes · 5s timer',
+          hard:   '7 processes · 3s timer',
+        }}
+        onSelect={(d) => { setStage(d); setScreen('algoSelect'); }}
+        onBack={() => setScreen('modeSelect')}
+      />
+    );
   }
 
   if (screen === 'algoSelect') {
@@ -263,7 +464,7 @@ export default function CpuPage() {
         setQuantum={setQuantum}
         useCustom={useCustom}
         setUseCustom={setUseCustom}
-        onBack={() => setScreen('modeSelect')}
+        onBack={() => setScreen(mode === 'play' ? 'stageSelect' : 'modeSelect')}
         onSelect={(algo) => mode === 'simulation' ? startSimulation(algo) : startPlay(algo)}
       />
     );
@@ -313,8 +514,9 @@ export default function CpuPage() {
         correctAnswer={correct}
         flashRight={flashRight}
         flashWrong={flashWrong}
-        gameStarted={gameStarted}
-        onStartGame={handleStartGame}
+        rrRemaining={algorithm === 'rr' ? rrRemaining : undefined}
+        rrQueue={algorithm === 'rr' ? rrQueue : undefined}
+        timerSeconds={TIMER_BY_DIFFICULTY[stage]}
         onProcessClick={(name) => handleProcessClick(name, currentTime, completedNames)}
         onTimeout={() => handleTimeout(currentTime, completedNames)}
         onRestart={() => startPlay(algorithm)}
@@ -509,13 +711,7 @@ function SimulationScreen({
 }) {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
-      <header className="game-header">
-        <div>
-          <h1>CPU SCHEDULING</h1>
-          <p>{getCpuAlgoLabel(algorithm)} — SIMULATION</p>
-        </div>
-        <button id="cpuExitButton" className="btn btn-sm" onClick={onExit}>EXIT</button>
-      </header>
+      <GameHeader moduleName="CPU SCHEDULING" algorithmLabel={getCpuAlgoLabel(algorithm)} modeLabel="SIMULATION" onExit={onExit} exitButtonId="cpuExitButton" />
 
       <main className="simulation-layout">
         {/* Center panel */}
@@ -590,7 +786,7 @@ function SimulationScreen({
         <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h2 style={{ fontSize: 14 }}>SIM CONTROL</h2>
           <button id="cpuStepButton" className="btn" onClick={onStep} disabled={revealed >= gantt.length}>STEP</button>
-          <button id="cpuAutoButton" className={`btn ${autoRunning ? 'btn-pink' : 'btn-pink'}`} onClick={onToggleAuto} disabled={revealed >= gantt.length}>
+          <button id="cpuAutoButton" className={`btn ${autoRunning ? 'btn-yellow' : 'btn-pink'}`} onClick={onToggleAuto} disabled={revealed >= gantt.length}>
             {autoRunning ? 'STOP AUTO' : 'AUTO RUN'}
           </button>
           <button id="cpuRestartButton" className="btn btn-sm" onClick={onRestart}>RESTART</button>
@@ -610,14 +806,16 @@ function SimulationScreen({
 function PlayScreen({
   algorithm, processes, arrivedProcesses, completedNames, currentTime, hearts, score,
   playMessage, playDone, timerKey, timerRunning, correctAnswer, flashRight, flashWrong,
-  gameStarted, onStartGame,
+  rrRemaining, rrQueue, timerSeconds,
   onProcessClick, onTimeout, onRestart, onExit,
 }: {
   algorithm: CpuAlgorithm; processes: CpuProcess[]; arrivedProcesses: CpuProcess[];
   completedNames: string[]; currentTime: number; hearts: number; score: number;
   playMessage: string; playDone: boolean; timerKey: number; timerRunning: boolean;
   correctAnswer: string | null; flashRight: string | null; flashWrong: string | null;
-  gameStarted: boolean; onStartGame: () => void;
+  rrRemaining?: Record<string, number>;
+  rrQueue?: string[];
+  timerSeconds: number;
   onProcessClick: (name: string) => void; onTimeout: () => void;
   onRestart: () => void; onExit: () => void;
 }) {
@@ -630,13 +828,7 @@ function PlayScreen({
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
-      <header className="game-header">
-        <div>
-          <h1>CPU SCHEDULING</h1>
-          <p>{getCpuAlgoLabel(algorithm)} — PLAY MODE</p>
-        </div>
-        <button id="cpuExitPlay" className="btn btn-sm" onClick={onExit}>EXIT</button>
-      </header>
+      <GameHeader moduleName="CPU SCHEDULING" algorithmLabel={getCpuAlgoLabel(algorithm)} modeLabel="PLAY MODE" onExit={onExit} exitButtonId="cpuExitPlay" />
 
       <main className="play-layout">
         {/* Left: status */}
@@ -663,26 +855,40 @@ function PlayScreen({
         {/* Center: timer + process cards */}
         <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {!playDone && (
-            <TimerBar key={timerKey} seconds={TIME_LIMIT} running={timerRunning} onExpire={onTimeout} />
+            <TimerBar key={timerKey} seconds={timerSeconds} running={timerRunning} onExpire={onTimeout} />
           )}
 
           <div style={{ border: '2px solid var(--border)', padding: 12, background: 'rgba(255,255,255,0.03)' }}>
             <h2 style={{ color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12, fontSize: 14 }}>
               ALL PROCESSES
             </h2>
+
+            {/* RR queue order display */}
+            {rrQueue && rrQueue.length > 0 && (
+              <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', padding: '5px 10px', marginBottom: 10, fontSize: 11 }}>
+                <span style={{ color: 'var(--yellow)' }}>QUEUE: </span>
+                {rrQueue.map((n, i) => (
+                  <span key={i} style={{ color: i === 0 ? 'var(--cyan)' : 'var(--white)', marginRight: 8, fontFamily: 'var(--font-mono)' }}>
+                    {i === 0 ? `► ${n}` : n}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px,1fr))', gap: 10 }}>
               {processes.map(p => {
                 const isDone = completedNames.includes(p.name);
                 const isArrived = p.arrival <= currentTime && !isDone;
                 const isCorrect = p.name === flashRight;
                 const isWrong = p.name === flashWrong;
+                const displayBurst = rrRemaining ? (rrRemaining[p.name] ?? p.burst) : p.burst;
 
                 return (
                   <button
                     key={p.name}
                     id={`cpu-play-${p.name}`}
-                    onClick={() => gameStarted && !playDone && isArrived && onProcessClick(p.name)}
-                    disabled={!gameStarted || playDone || !isArrived}
+                    onClick={() => !playDone && isArrived && onProcessClick(p.name)}
+                    disabled={playDone || !isArrived}
                     style={{
                       border: isDone
                         ? '2px solid #333'
@@ -710,7 +916,9 @@ function PlayScreen({
                     className={isCorrect ? 'correct-flash' : isWrong ? 'wrong-flash' : ''}
                   >
                     <strong style={{ display: 'block', color: isDone ? '#666' : 'var(--yellow)', fontSize: 16 }}>{p.name}</strong>
-                    <span style={{ fontSize: 11, display: 'block' }}>Arr: {p.arrival} | Burst: {p.burst}</span>
+                    <span style={{ fontSize: 11, display: 'block' }}>
+                      Arr: {p.arrival} | {rrRemaining ? `Rem: ${displayBurst}` : `Burst: ${p.burst}`}
+                    </span>
                     <span style={{ fontSize: 11, display: 'block' }}>Pri: {p.priority}</span>
                     {isDone && <span style={{ fontSize: 10, color: 'var(--success)' }}>✓ DONE</span>}
                     {p.arrival > currentTime && <span style={{ fontSize: 10, color: '#7a8ab0' }}>arrives@{p.arrival}</span>}
@@ -729,11 +937,6 @@ function PlayScreen({
             <JustifiedText style={{ fontSize: 12, marginTop: 4 }}>{ruleText}</JustifiedText>
           </div>
           <div className="message-box" style={{ fontSize: 12 }}>{playMessage}</div>
-          
-          {!gameStarted && !playDone && (
-            <button className="btn btn-yellow" onClick={onStartGame}>START GAME</button>
-          )}
-
           {playDone && (
             <>
               <button id="cpuPlayRestart" className="btn" onClick={onRestart}>PLAY AGAIN</button>
