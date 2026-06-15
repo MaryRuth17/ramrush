@@ -259,7 +259,7 @@ body {
   min-width: 44px;
   transition: border-color 0.2s, color 0.2s;
 }
-.ref-cell.hit   { border-color: var(--danger); color: var(--danger); }
+.ref-cell.hit   { border-color: var(--success); color: var(--success); }
 .ref-cell.fault { border-color: var(--danger);  color: var(--danger); }
 .ref-cell.current { outline: 3px solid var(--yellow); }
 
