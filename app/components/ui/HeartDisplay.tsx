@@ -1,8 +1,9 @@
 'use client';
 
-// components/ui/HeartDisplay.tsx — Heart life display with loss animation
+// components/ui/HeartDisplay.tsx — Heart life display with pixel art heart images
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 
 interface HeartDisplayProps {
   hearts: number;
@@ -26,13 +27,38 @@ export function HeartDisplay({ hearts, maxHearts }: HeartDisplayProps) {
   const emptyCount = maxHearts - hearts - (animatingOut ? 1 : 0);
 
   return (
-    <div style={{ fontSize: 30, letterSpacing: 4 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
       {Array.from({ length: hearts }, (_, i) => (
-        <span key={i} className="heart-full">♥</span>
+        <Image
+          key={i}
+          src="/ui/full_heart.png"
+          alt="heart"
+          width={28}
+          height={28}
+          className="heart-full"
+          style={{ imageRendering: 'pixelated' }}
+        />
       ))}
-      {animatingOut && <span className="heart-losing">♥</span>}
+      {animatingOut && (
+        <Image
+          src="/ui/full_heart.png"
+          alt="losing heart"
+          width={28}
+          height={28}
+          className="heart-losing"
+          style={{ imageRendering: 'pixelated' }}
+        />
+      )}
       {Array.from({ length: Math.max(0, emptyCount) }, (_, i) => (
-        <span key={`e${i}`} className="heart-empty">♡</span>
+        <Image
+          key={`e${i}`}
+          src="/ui/empty_heart.png"
+          alt="empty heart"
+          width={28}
+          height={28}
+          className="heart-empty"
+          style={{ imageRendering: 'pixelated' }}
+        />
       ))}
     </div>
   );

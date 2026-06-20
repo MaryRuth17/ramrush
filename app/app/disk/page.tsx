@@ -53,6 +53,35 @@ const DISK_SETS: Record<'easy' | 'normal' | 'hard', { requests: number[]; headSt
   ],
 };
 
+/* ── HELPER FOR VERTICAL STAGGERING ── */
+function computeStaggerLevels(tracks: number[], headStart: number): Record<number, number> {
+  const sorted = Array.from(new Set([...tracks, headStart])).sort((a, b) => a - b);
+  const levels: Record<number, number> = {};
+  
+  // If track values (0-199) are within 12 cylinder units, stagger them
+  const STAGGER_LIMIT = 12; 
+  
+  for (let i = 0; i < sorted.length; i++) {
+    const current = sorted[i];
+    const activeLevels = new Set<number>();
+    
+    for (let j = i - 1; j >= 0; j--) {
+      if (current - sorted[j] < STAGGER_LIMIT) {
+        activeLevels.add(levels[sorted[j]]);
+      } else {
+        break; 
+      }
+    }
+    
+    let chosenLevel = 0;
+    while (activeLevels.has(chosenLevel)) {
+      chosenLevel++;
+    }
+    levels[current] = chosenLevel % 3; // Keep within 3 stagger levels (0, 1, 2)
+  }
+  return levels;
+}
+
 export default function DiskPage() {
   const router = useRouter();
   const [screen, setScreen] = useState<Screen>('modeSelect');
@@ -356,13 +385,15 @@ export default function DiskPage() {
       <div style={{ maxWidth: 700, width: '100%', padding: 24 }}>
         <h1 className="font-pixel" style={{ color: 'var(--yellow)', textAlign: 'center', fontSize: 'clamp(18px,3vw,32px)', marginBottom: 32 }}>DISK SCHEDULING</h1>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px,1fr))', gap: 18, marginBottom: 24 }}>
-          <button id="diskPlayMode" className="topic-card cyan-card" onClick={() => { setMode('play'); setScreen('stageSelect'); }}>
-            <span className="topic-icon">▶</span><strong className="topic-title">PLAY</strong>
-            <small className="topic-desc">Timed — click the correct next disk track mark</small>
+          <button id="diskPlayMode" className="topic-card-pixel" onClick={() => { setMode('play'); setScreen('stageSelect'); }}
+            style={{ backgroundImage: "url('/assets/topic_select_blue.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}>
+            <div className="topic-card-content"><span className="topic-icon">▶</span><strong className="topic-title">PLAY</strong>
+            <small className="topic-desc">Timed — click the correct next disk track mark</small></div>
           </button>
-          <button id="diskSimMode" className="topic-card pink-card" onClick={() => { setMode('simulation'); setScreen('algoSelect'); }}>
-            <span className="topic-icon">⚙</span><strong className="topic-title">SIMULATION</strong>
-            <small className="topic-desc">Step-by-step disk head movement visualiser</small>
+          <button id="diskSimMode" className="topic-card-pixel" onClick={() => { setMode('simulation'); setScreen('algoSelect'); }}
+            style={{ backgroundImage: "url('/assets/topic_select_red.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}>
+            <div className="topic-card-content"><span className="topic-icon">⚙</span><strong className="topic-title">SIMULATION</strong>
+            <small className="topic-desc">Step-by-step disk head movement visualiser</small></div>
           </button>
         </div>
         <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← BACK</button></div>
@@ -449,6 +480,13 @@ export default function DiskPage() {
         <GameHeader moduleName="DISK SCHEDULING" algorithmLabel={getDiskAlgoLabel(algorithm)} modeLabel="SIMULATION" onExit={() => router.push('/?topic=true')} />
         <main className="simulation-layout">
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Algorithm info + message — shown first so visible without scrolling */}
+            <div className="rule-box" style={{ marginBottom: 0 }}>
+              <span>ALGORITHM INFO</span>
+              <JustifiedText style={{ fontSize: 12, marginTop: 4 }}>{algoInfo}</JustifiedText>
+            </div>
+            <div className="message-box" style={{ fontSize: 12, marginBottom: 0 }}>{simMessage}</div>
+
             {/* Request queue */}
             <div style={{ border: '2px solid var(--border)', padding: 12 }}>
               <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>
@@ -456,9 +494,9 @@ export default function DiskPage() {
               </h2>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {simResult.requests.map((t, i) => (
-                  <div key={i} className="queue-card" style={{ minHeight: 'auto', padding: '8px 12px' }}>
-                    <strong style={{ color: 'var(--pink)', display: 'block' }}>TRACK</strong>
-                    <span style={{ color: 'var(--white)' }}>{t}</span>
+                  <div key={i} className="memory-block free" style={{ cursor: 'default', minHeight: 'auto', padding: '6px 12px', minWidth: 70 }}>
+                    <span className="mem-label label-title" style={{ fontSize: 9 }}>TRACK</span>
+                    <span className="mem-label label-size" style={{ fontSize: 12 }}>{t}</span>
                   </div>
                 ))}
               </div>
@@ -471,14 +509,38 @@ export default function DiskPage() {
               </h2>
               <div className="disk-line">
                 {/* Start marker */}
-                <div className="disk-mark" style={{ left: `${pct(simResult.headStart)}%`, background: 'var(--yellow)' }}>
-                  <span>START {simResult.headStart}</span>
-                </div>
+                {(() => {
+                  const staggerLevels = computeStaggerLevels(simResult.requests, simResult.headStart);
+                  const startLevel = staggerLevels[simResult.headStart] ?? 0;
+                  const isCurrent = currentPos === simResult.headStart;
+                  return (
+                    <div
+                      className={`disk-mark-block free start-pos stagger-level-${startLevel} ${isCurrent ? 'current-head' : ''}`}
+                      style={{
+                        left: `calc(${pct(simResult.headStart)}% - 16px)`,
+                      }}
+                    >
+                      <span className="mem-label label-title" style={{ fontSize: 7, color: 'var(--yellow)' }}>START</span>
+                      <span className="mem-label label-size">{simResult.headStart}</span>
+                    </div>
+                  );
+                })()}
+
                 {simResult.requests.map((t, i) => {
                   const visited = simResult.order.slice(0, revealed).includes(t);
+                  const isCurrent = currentPos === t;
+                  const staggerLevels = computeStaggerLevels(simResult.requests, simResult.headStart);
+                  const level = staggerLevels[t] ?? 0;
                   return (
-                    <div key={i} className={`disk-mark ${visited ? 'visited' : ''}`} style={{ left: `${pct(t)}%` }}>
-                      <span>{t}</span>
+                    <div
+                      key={i}
+                      className={`disk-mark-block ${visited ? 'used' : 'free'} stagger-level-${level} ${visited ? 'visited' : ''} ${isCurrent ? 'current-head' : ''}`}
+                      style={{
+                        left: `calc(${pct(t)}% - 16px)`,
+                      }}
+                    >
+                      <span className="mem-label label-title" style={{ fontSize: 7 }}>TRACK</span>
+                      <span className="mem-label label-size">{t}</span>
                     </div>
                   );
                 })}
@@ -491,9 +553,9 @@ export default function DiskPage() {
               <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>SERVICE ORDER</h2>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {simResult.order.map((t, i) => (
-                  <div key={i} className={`queue-card ${i < revealed ? 'order-card visited' : 'order-card'}`} style={{ minHeight: 'auto', padding: '8px 12px', borderColor: i < revealed ? 'var(--success)' : undefined, background: i < revealed ? '#173322' : undefined }}>
-                    <strong style={{ display: 'block', color: 'var(--pink)', marginBottom: 2 }}>STEP {i + 1}</strong>
-                    <span style={{ color: 'var(--white)', fontSize: 12 }}>Track {t}</span>
+                  <div key={i} className={`memory-block ${i < revealed ? 'used' : 'empty'}`} style={{ cursor: 'default', minHeight: 'auto', padding: '6px 12px', minWidth: 80, border: '2px solid var(--border)', outline: i < revealed ? '3px solid var(--success)' : undefined, opacity: i < revealed ? 1 : 0.5 }}>
+                    <span className="mem-label label-title" style={{ fontSize: 9 }}>STEP {i + 1}</span>
+                    <span className="mem-label label-size" style={{ fontSize: 11 }}>Trk {t}</span>
                   </div>
                 ))}
               </div>
@@ -501,7 +563,7 @@ export default function DiskPage() {
 
             {/* Results */}
             {done && (
-              <div style={{ border: '2px solid var(--border)', padding: 12 }}>
+              <div className="results-panel-bg" style={{ border: '2px solid var(--border)' }}>
                 <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>RESULTS</h2>
                 <table className="results-table">
                   <thead><tr><th>Service Order</th><th>Total Head Movement</th></tr></thead>
@@ -516,16 +578,14 @@ export default function DiskPage() {
               </div>
             )}
           </section>
-          <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+          {/* Sim Control — sticky sidebar on desktop, top on mobile */}
+          <section className="panel sim-control-panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <h2 style={{ fontSize: 14 }}>SIM CONTROL</h2>
             <button className="btn" onClick={() => simResult && doSimStep(simResult, revealed)} disabled={done}>STEP</button>
             <button className={`btn ${autoRunning ? 'btn-yellow' : 'btn-pink'}`} onClick={toggleDiskAuto} disabled={done}>{autoRunning ? 'STOP AUTO' : 'AUTO RUN'}</button>
             <button className="btn btn-sm" onClick={() => startSim(algorithm)}>RESTART</button>
-            <div className="rule-box">
-              <span>ALGORITHM INFO</span>
-              <JustifiedText style={{ fontSize: 12, marginTop: 4 }}>{algoInfo}</JustifiedText>
-            </div>
-            <div className="message-box" style={{ fontSize: 12 }}>{simMessage}</div>
+            <button className="btn btn-sm" style={{ borderColor: 'var(--pink)', color: 'var(--pink)' }} onClick={() => router.push('/?topic=true')}>← EXIT</button>
           </section>
         </main>
       </div>
@@ -534,21 +594,32 @@ export default function DiskPage() {
 
   if (screen === 'play') {
     const pct = (t: number) => (t / DISK_MAX_TRACK) * 100;
-    const nextCorrect = playStep < playOrder.length ? playOrder[playStep] : -1;
     return (
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
         <GameHeader moduleName="DISK SCHEDULING" algorithmLabel={getDiskAlgoLabel(algorithm)} modeLabel="PLAY MODE" onExit={() => router.push('/?topic=true')} />
         <main className="play-layout">
-          <section className="panel">
+          {/* SYSTEM panel — horizontal row on mobile */}
+          <section className="panel disk-system-panel">
             <h2 style={{ fontSize: 14 }}>SYSTEM</h2>
-            <div className="stat-block"><span>HEARTS</span><HeartDisplay hearts={hearts} maxHearts={MAX_HEARTS} /></div>
-            <div className="stat-block"><span>SCORE</span><strong>{score}</strong></div>
-            <div className="stat-block"><span>STEP</span><strong>{playStep}/{playOrder.length}</strong></div>
-            <div className="stat-block"><span>MOVED</span><strong>{totalMoved} tracks</strong></div>
-            <div className="stat-block"><span>HEAD</span><strong>Track {playHead}</strong></div>
+            <div className="stat-row">
+              <div className="stat-block"><span>HEARTS</span><HeartDisplay hearts={hearts} maxHearts={MAX_HEARTS} /></div>
+              <div className="stat-block"><span>SCORE</span><strong>{score}</strong></div>
+              <div className="stat-block"><span>STEP</span><strong>{playStep}/{playOrder.length}</strong></div>
+              <div className="stat-block"><span>MOVED</span><strong>{totalMoved} trk</strong></div>
+              <div className="stat-block"><span>HEAD</span><strong>Trk {playHead}</strong></div>
+            </div>
           </section>
 
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Rule + message visible at top before track */}
+            <div className="rule-box" style={{ marginBottom: 0 }}>
+              <span>RULE</span>
+              <JustifiedText style={{ fontSize: 12, marginTop: 4 }}>
+                {`Click the track mark that ${getDiskAlgoLabel(algorithm)} would service next.`}
+              </JustifiedText>
+            </div>
+            <div className="message-box" style={{ fontSize: 12, marginBottom: 0 }}>{playMessage}</div>
+
             {!playDone && (
               <TimerBar
                 key={timerKey}
@@ -561,28 +632,56 @@ export default function DiskPage() {
               <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>
                 DISK TRACK — Click the next track to visit!
               </h2>
-              <div className="disk-line" style={{ height: 100 }}>
-                <div className="disk-mark" style={{ left: `${pct(activeHead())}%`, background: 'var(--yellow)' }}>
-                  <span>START {activeHead()}</span>
-                </div>
+              <div className="disk-line">
+                {/* Start marker */}
+                {(() => {
+                  const staggerLevels = computeStaggerLevels(playRequests, activeHead());
+                  const startLevel = staggerLevels[activeHead()] ?? 0;
+                  const isCurrent = playHead === activeHead();
+                  return (
+                    <div
+                      className={`disk-mark-block free start-pos stagger-level-${startLevel} ${isCurrent ? 'current-head' : ''}`}
+                      style={{
+                        left: `calc(${pct(activeHead())}% - 16px)`,
+                      }}
+                    >
+                      <span className="mem-label label-title" style={{ fontSize: 7, color: 'var(--yellow)' }}>START</span>
+                      <span className="mem-label label-size">{activeHead()}</span>
+                    </div>
+                  );
+                })()}
+
                 {playRequests.map((t, i) => {
                   const visited = playVisited.includes(t);
                   const isRight = flashRight === t;
                   const isWrong = flashWrong === t;
+                  const isCurrent = playHead === t;
+                  const staggerLevels = computeStaggerLevels(playRequests, activeHead());
+                  const level = staggerLevels[t] ?? 0;
+                  
                   return (
-                    <div
+                    <button
                       key={i}
-                      className={`disk-mark clickable ${visited ? 'visited' : ''}`}
+                      id={`disk-play-mark-${t}`}
+                      disabled={playDone || visited}
+                      className={`disk-mark-block ${visited ? 'used' : 'free'} stagger-level-${level} ${visited ? 'visited' : ''} ${isCurrent ? 'current-head' : ''}`}
                       style={{
-                        left: `${pct(t)}%`,
-                        background: isRight ? 'var(--success)' : isWrong ? 'var(--danger)' : visited ? 'var(--success)' : 'var(--violet)',
+                        left: `calc(${pct(t)}% - 16px)`,
+                        outline: isRight
+                          ? '3px solid var(--success)'
+                          : isWrong
+                          ? '3px solid var(--danger)'
+                          : isCurrent
+                          ? '3px solid var(--yellow)'
+                          : undefined,
                         cursor: !playDone && !visited ? 'pointer' : 'default',
-                        width: 4,
+                        opacity: visited ? 0.6 : 1,
                       }}
                       onClick={() => !playDone && !visited && handleTrackClick(t, playStep, playVisited, playHead, totalMoved, hearts, score)}
                     >
-                      <span style={{ fontWeight: 'bold', color: t === nextCorrect && !playDone ? 'var(--yellow)' : 'var(--white)' }}>{t}</span>
-                    </div>
+                      <span className="mem-label label-title" style={{ fontSize: 7 }}>TRACK</span>
+                      <span className="mem-label label-size">{t}</span>
+                    </button>
                   );
                 })}
                 <div className="disk-head" style={{ left: `${pct(playHead)}%` }} />
@@ -592,31 +691,29 @@ export default function DiskPage() {
             <div style={{ border: '2px solid var(--border)', padding: 12 }}>
               <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>SERVICE ORDER</h2>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {playOrder.map((t, i) => (
-                  <div key={i} className="queue-card" style={{ minHeight: 'auto', padding: '6px 10px', borderColor: i < playStep ? 'var(--success)' : i === playStep ? 'var(--yellow)' : 'var(--violet)', background: i < playStep ? '#173322' : 'var(--terminal-black)' }}>
-                    <strong style={{ display: 'block', color: i < playStep ? 'var(--success)' : 'var(--pink)', marginBottom: 2, fontSize: 11 }}>STEP {i + 1}</strong>
-                    <span style={{ fontSize: 12, color: i === playStep ? 'var(--yellow)' : 'var(--white)' }}>Track {t}</span>
-                  </div>
-                ))}
+                {playOrder.map((t, i) => {
+                  const isVisited = i < playStep;
+                  const isCurrent = i === playStep;
+                  return (
+                    <div key={i} className={`memory-block ${isVisited ? 'used' : 'empty'}`} style={{ cursor: 'default', minHeight: 'auto', padding: '6px 10px', minWidth: 80, border: '2px solid var(--border)', outline: isCurrent ? '3px solid var(--yellow)' : isVisited ? '3px solid var(--success)' : undefined }}>
+                      <span className="mem-label label-title" style={{ fontSize: 9 }}>STEP {i + 1}</span>
+                      <span className="mem-label label-size" style={{ fontSize: 11, color: isCurrent ? 'var(--yellow)' : 'var(--white)' }}>Trk {t}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </section>
 
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <h2 style={{ fontSize: 14 }}>CONTROL</h2>
-            <div className="rule-box">
-              <span>RULE</span>
-              <JustifiedText style={{ fontSize: 12, marginTop: 4 }}>
-                {`Click the track mark that ${getDiskAlgoLabel(algorithm)} would service next. Track marks glow yellow when it is your turn to pick.`}
-              </JustifiedText>
-            </div>
-            <div className="message-box" style={{ fontSize: 12 }}>{playMessage}</div>
-            {playDone && (
+            {playDone ? (
               <>
                 <button className="btn" onClick={() => startPlay(algorithm)}>PLAY AGAIN</button>
                 <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← MENU</button>
+                <button className="btn btn-sm" style={{ borderColor: 'var(--pink)', color: 'var(--pink)' }} onClick={() => router.push('/?topic=true')}>← EXIT</button>
               </>
-            )}
+            ) : null}
           </section>
         </main>
         {!playStarted && !playDone && (

@@ -5,6 +5,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+
 type Screen = 'opening' | 'topic';
 
 const BOOT_LINES = [
@@ -60,18 +61,12 @@ export default function HomePage() {
   );
 }
 
-/* ── OPENING SCREEN ─────────────────────────────────────────── */
+/* ── OPENING SCREEN ──────────────────────────────────────────────────── */
 function OpeningScreen({ onStart }: { onStart: () => void }) {
   return (
-    <div className="cyberdeck-shell">
-      {/* Top bar */}
-      <div className="deck-topbar">
-        <span>CYBERDECK // RAM RUSH OS</span>
-        <span>v12.0</span>
-      </div>
-
-      {/* CRT screen */}
-      <div className="crt-screen">
+    <div className="opening-screen-wrapper">
+      {/* Pixel-art CRT frame — the start_screen.png drawn asset */}
+      <div className="crt-frame">
         <div className="scanline-layer" />
 
         {/* Boot text */}
@@ -83,30 +78,17 @@ function OpeningScreen({ onStart }: { onStart: () => void }) {
           ))}
         </div>
 
-        {/* Title */}
-        <div
-          style={{
-            position: 'relative',
-            zIndex: 2,
-            textAlign: 'center',
-            margin: '40px 0 28px',
-          }}
-        >
-          <h1
-            style={{
-              fontFamily: 'var(--font-pixel)',
-              fontSize: 'clamp(28px, 8vw, 74px)',
-              color: 'var(--cyan)',
-              textShadow: '4px 4px 0 var(--pink)',
-              lineHeight: 1.2,
-            }}
-          >
-            RAM RUSH
-          </h1>
-          <p style={{ color: 'var(--yellow)', marginTop: 8, fontSize: 14 }}>
-            OS ALGORITHMS CHALLENGE — v12
-          </p>
+        {/* Logo image replaces the plain text title */}
+        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', margin: '28px auto 16px', display: 'flex', justifyContent: 'center' }}>
+          <img
+            src="/icons/logo.png"
+            alt="RAM RUSH"
+            style={{ imageRendering: 'pixelated', width: '60%', maxWidth: 300, height: 'auto', display: 'block' }}
+          />
         </div>
+        <p style={{ position: 'relative', zIndex: 2, color: 'var(--yellow)', textAlign: 'center', fontSize: 12, marginBottom: 20 }}>
+          OS ALGORITHMS CHALLENGE — v12
+        </p>
 
         {/* Start button */}
         <div style={{ position: 'relative', zIndex: 2, textAlign: 'center' }}>
@@ -120,47 +102,39 @@ function OpeningScreen({ onStart }: { onStart: () => void }) {
           </button>
         </div>
       </div>
-
-      {/* Bottom hardware panel */}
-      <div className="deck-topbar" style={{ borderTop: '3px solid var(--violet)', borderBottom: 'none', justifyContent: 'flex-start', gap: 10 }}>
-        <span style={{ width: 14, height: 14, background: 'var(--cyan)', border: '2px solid #fff', display: 'inline-block' }} />
-        <span style={{ width: 14, height: 14, background: 'var(--pink)', border: '2px solid #fff', display: 'inline-block' }} />
-        <span style={{ flex: 1, height: 16, border: '2px solid var(--border)', background: '#02030a', display: 'inline-block' }} />
-        <span style={{ width: 14, height: 14, background: 'var(--yellow)', border: '2px solid #fff', display: 'inline-block' }} />
-      </div>
     </div>
   );
 }
 
-/* ── TOPIC SELECT SCREEN ────────────────────────────────────── */
+/* ── TOPIC SELECT SCREEN ────────────────────────────────────────────── */
 const TOPICS = [
   {
     id: 'memory',
     icon: '▦',
     title: 'MEMORY ALLOCATION',
     desc: 'First Fit, Best Fit, Worst Fit — Play & Simulation modes',
-    color: 'cyan-card',
+    cardImg: '/assets/topic_select_blue.png',
   },
   {
     id: 'cpu',
     icon: '⏱',
     title: 'CPU SCHEDULING',
     desc: 'FCFS, SJF, Priority, Round Robin — Play & Simulation modes',
-    color: 'pink-card',
+    cardImg: '/assets/topic_select_red.png',
   },
   {
     id: 'vm',
     icon: '▤',
     title: 'VIRTUAL MEMORY',
     desc: 'FIFO, LRU, Optimal page replacement — Play & Simulation modes',
-    color: 'cyan-card',
+    cardImg: '/assets/topic_select_blue.png',
   },
   {
     id: 'disk',
     icon: '◎',
     title: 'DISK SCHEDULING',
     desc: 'FCFS, SSTF, SCAN, C-SCAN, LOOK — Play & Simulation modes',
-    color: 'pink-card',
+    cardImg: '/assets/topic_select_red.png',
   },
 ];
 
@@ -205,12 +179,19 @@ function TopicSelectScreen({
           <button
             key={t.id}
             id={`topic-${t.id}`}
-            className={`topic-card ${t.color}`}
+            className="topic-card-pixel"
             onClick={() => onSelectTopic(t.id)}
+            style={{
+              backgroundImage: `url('${t.cardImg}')`,
+              backgroundSize: '100% 100%',
+              imageRendering: 'pixelated',
+            }}
           >
-            <span className="topic-icon">{t.icon}</span>
-            <strong className="topic-title">{t.title}</strong>
-            <small className="topic-desc">{t.desc}</small>
+            <div className="topic-card-content">
+              <span className="topic-icon">{t.icon}</span>
+              <strong className="topic-title">{t.title}</strong>
+              <small className="topic-desc">{t.desc}</small>
+            </div>
           </button>
         ))}
       </div>

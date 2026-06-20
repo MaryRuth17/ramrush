@@ -397,13 +397,15 @@ export default function MemoryPage() {
       <div style={{ maxWidth: 700, width: '100%', padding: 24 }}>
         <h1 className="font-pixel" style={{ color: 'var(--yellow)', textAlign: 'center', fontSize: 'clamp(18px,3vw,32px)', marginBottom: 32 }}>MEMORY ALLOCATION</h1>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px,1fr))', gap: 18, marginBottom: 24 }}>
-          <button id="memPlayMode" className="topic-card cyan-card" onClick={() => { setMode('play'); setScreen('stageSelect'); }}>
-            <span className="topic-icon">▶</span><strong className="topic-title">PLAY</strong>
-            <small className="topic-desc">Timed challenge — click the correct memory block</small>
+          <button id="memPlayMode" className="topic-card-pixel" onClick={() => { setMode('play'); setScreen('stageSelect'); }}
+            style={{ backgroundImage: "url('/assets/topic_select_blue.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}>
+            <div className="topic-card-content"><span className="topic-icon">▶</span><strong className="topic-title">PLAY</strong>
+            <small className="topic-desc">Timed challenge — click the correct memory block</small></div>
           </button>
-          <button id="memSimMode" className="topic-card pink-card" onClick={() => { setMode('simulation'); setScreen('algoSelect'); }}>
-            <span className="topic-icon">⚙</span><strong className="topic-title">SIMULATION</strong>
-            <small className="topic-desc">Step-by-step memory allocation visualiser</small>
+          <button id="memSimMode" className="topic-card-pixel" onClick={() => { setMode('simulation'); setScreen('algoSelect'); }}
+            style={{ backgroundImage: "url('/assets/topic_select_red.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}>
+            <div className="topic-card-content"><span className="topic-icon">⚙</span><strong className="topic-title">SIMULATION</strong>
+            <small className="topic-desc">Step-by-step memory allocation visualiser</small></div>
           </button>
         </div>
         <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← BACK</button></div>
@@ -541,9 +543,9 @@ export default function MemoryPage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10 }}>
                 {simBlocks.map((b, i) => (
                   <div key={i} className={`memory-block ${b.used ? 'used' : 'free'}`} style={{ cursor: 'default' }}>
-                    <strong style={{ display: 'block' }}>BLOCK {i + 1}</strong>
-                    <span style={{ display: 'block', marginTop: 4 }}>{b.size} MB</span>
-                    {b.used && <span style={{ display: 'block', fontSize: 11, marginTop: 2 }}>{b.processName}</span>}
+                    <span className="mem-label label-title">BLOCK {i + 1}</span>
+                    <span className="mem-label label-size">{b.size} MB</span>
+                    {b.used && <span className="mem-label label-proc">{b.processName}</span>}
                   </div>
                 ))}
               </div>
@@ -564,7 +566,7 @@ export default function MemoryPage() {
             </div>
 
             {(processed.length > 0 || unprocessed.length > 0) && (
-              <div style={{ border: '2px solid var(--border)', padding: 12 }}>
+              <div className="results-panel-bg" style={{ border: '2px solid var(--border)' }}>
                 <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>RESULTS</h2>
                 {processed.length > 0 && (
                   <div style={{ marginBottom: 8 }}>
@@ -655,9 +657,9 @@ export default function MemoryPage() {
                         cursor: b.used || playDone ? 'default' : 'pointer',
                       }}
                     >
-                      <strong style={{ display: 'block', fontSize: 13 }}>BLOCK {i + 1}</strong>
-                      <span style={{ display: 'block', marginTop: 4 }}>{b.size} MB</span>
-                      {b.used && <span style={{ display: 'block', fontSize: 10, marginTop: 2 }}>{b.processName}</span>}
+                      <span className="mem-label label-title">BLOCK {i + 1}</span>
+                      <span className="mem-label label-size">{b.size} MB</span>
+                      {b.used && <span className="mem-label label-proc">{b.processName}</span>}
                     </button>
                   );
                 })}
