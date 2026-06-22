@@ -208,6 +208,7 @@ input[type="text"] *, input[type="number"] *, textarea * {
 
 /* ── MEMORY BLOCKS ───────────────────────────────────────────────── */
 .memory-block {
+  position: relative;
   min-height: 110px;
   padding: 8px;
   text-align: center;

@@ -480,13 +480,6 @@ export default function DiskPage() {
         <GameHeader moduleName="DISK SCHEDULING" algorithmLabel={getDiskAlgoLabel(algorithm)} modeLabel="SIMULATION" onExit={() => router.push('/?topic=true')} />
         <main className="simulation-layout">
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Algorithm info + message — shown first so visible without scrolling */}
-            <div className="rule-box" style={{ marginBottom: 0 }}>
-              <span>ALGORITHM INFO</span>
-              <JustifiedText style={{ fontSize: 12, marginTop: 4 }}>{algoInfo}</JustifiedText>
-            </div>
-            <div className="message-box" style={{ fontSize: 12, marginBottom: 0 }}>{simMessage}</div>
-
             {/* Request queue */}
             <div style={{ border: '2px solid var(--border)', padding: 12 }}>
               <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>
@@ -586,6 +579,12 @@ export default function DiskPage() {
             <button className={`btn ${autoRunning ? 'btn-yellow' : 'btn-pink'}`} onClick={toggleDiskAuto} disabled={done}>{autoRunning ? 'STOP AUTO' : 'AUTO RUN'}</button>
             <button className="btn btn-sm" onClick={() => startSim(algorithm)}>RESTART</button>
             <button className="btn btn-sm" style={{ borderColor: 'var(--pink)', color: 'var(--pink)' }} onClick={() => router.push('/?topic=true')}>← EXIT</button>
+
+            <div className="rule-box" style={{ marginTop: 8 }}>
+              <span>ALGORITHM INFO</span>
+              <JustifiedText style={{ fontSize: 12, marginTop: 4 }}>{algoInfo}</JustifiedText>
+            </div>
+            <div className="message-box" style={{ fontSize: 12 }}>{simMessage}</div>
           </section>
         </main>
       </div>
@@ -611,15 +610,6 @@ export default function DiskPage() {
           </section>
 
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Rule + message visible at top before track */}
-            <div className="rule-box" style={{ marginBottom: 0 }}>
-              <span>RULE</span>
-              <JustifiedText style={{ fontSize: 12, marginTop: 4 }}>
-                {`Click the track mark that ${getDiskAlgoLabel(algorithm)} would service next.`}
-              </JustifiedText>
-            </div>
-            <div className="message-box" style={{ fontSize: 12, marginBottom: 0 }}>{playMessage}</div>
-
             {!playDone && (
               <TimerBar
                 key={timerKey}
@@ -707,13 +697,20 @@ export default function DiskPage() {
 
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <h2 style={{ fontSize: 14 }}>CONTROL</h2>
-            {playDone ? (
+            <div className="rule-box">
+              <span>RULE</span>
+              <JustifiedText style={{ fontSize: 12, marginTop: 4 }}>
+                {`Click the track mark that ${getDiskAlgoLabel(algorithm)} would service next.`}
+              </JustifiedText>
+            </div>
+            <div className="message-box" style={{ fontSize: 12 }}>{playMessage}</div>
+            {playDone && (
               <>
                 <button className="btn" onClick={() => startPlay(algorithm)}>PLAY AGAIN</button>
                 <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← MENU</button>
                 <button className="btn btn-sm" style={{ borderColor: 'var(--pink)', color: 'var(--pink)' }} onClick={() => router.push('/?topic=true')}>← EXIT</button>
               </>
-            ) : null}
+            )}
           </section>
         </main>
         {!playStarted && !playDone && (

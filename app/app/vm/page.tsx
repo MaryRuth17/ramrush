@@ -474,7 +474,7 @@ export default function VmPage() {
               <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>FRAMES</h2>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${activeFrames()}, 1fr)`, gap: 10 }}>
                 {currentFrames.map((page, i) => (
-                  <div key={i} className={`memory-block vm-frame ${page === null ? 'empty' : 'filled'}`} style={{ cursor: 'default' }}>
+                  <div key={i} className={`memory-block vm-frame ${page === null ? 'empty' : 'filled'}`} style={{ cursor: 'default', position: 'relative' }}>
                     <span className="mem-label label-title">FRAME {i + 1}</span>
                     <span className="mem-label label-size">{page === null ? 'EMPTY' : `PAGE ${page}`}</span>
                   </div>
@@ -531,8 +531,8 @@ export default function VmPage() {
           </section>
 
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {!playDone && needsChoice && (
-              <TimerBar key={timerKey} seconds={TIMER_BY_DIFFICULTY[stage]} running={timerRunning} onExpire={handlePlayTimeout} />
+            {!playDone && (
+              <TimerBar key={timerKey} seconds={TIMER_BY_DIFFICULTY[stage]} running={timerRunning && needsChoice} onExpire={handlePlayTimeout} />
             )}
             <div style={{ border: '2px solid var(--border)', padding: 12 }}>
               <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>REFERENCE STRING</h2>
@@ -571,6 +571,7 @@ export default function VmPage() {
                       onClick={() => handleFrameClick(i)}
                       disabled={!needsChoice || playDone}
                       style={{
+                        position: 'relative',
                         cursor: needsChoice && !playDone ? 'pointer' : 'default',
                         border: needsChoice ? '3px solid var(--yellow)' : undefined,
                         outline: isRight ? '4px solid var(--success)' : isWrong ? '4px solid var(--danger)' : undefined,
