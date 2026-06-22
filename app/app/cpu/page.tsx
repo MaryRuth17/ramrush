@@ -812,7 +812,7 @@ function SimulationScreen({
         </section>
 
         {/* Control panel */}
-        <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <section className="panel sim-control-panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h2 style={{ fontSize: 14 }}>SIM CONTROL</h2>
           <button id="cpuStepButton" className="btn" onClick={onStep} disabled={revealed >= gantt.length}>STEP</button>
           <button id="cpuAutoButton" className={`btn ${autoRunning ? 'btn-yellow' : 'btn-pink'}`} onClick={onToggleAuto} disabled={revealed >= gantt.length}>
@@ -861,7 +861,7 @@ function PlayScreen({
 
       <main className="play-layout">
         {/* Left: status */}
-        <section className="panel disk-system-panel">
+        <section className="panel system-panel">
           <h2 style={{ fontSize: 14 }}>SYSTEM</h2>
           <div className="stat-row">
             <div className="stat-block">
@@ -960,7 +960,6 @@ function PlayScreen({
             <>
               <button id="cpuPlayRestart" className="btn" onClick={onRestart}>PLAY AGAIN</button>
               <button id="cpuPlayExit" className="btn btn-sm" onClick={onExit}>← MENU</button>
-              <button className="btn btn-sm" style={{ borderColor: 'var(--pink)', color: 'var(--pink)' }} onClick={onExit}>← EXIT</button>
             </>
           )}
         </section>

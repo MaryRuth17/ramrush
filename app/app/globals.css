@@ -767,7 +767,7 @@ input[type="text"] *, input[type="number"] *, textarea * {
   .play-layout, .simulation-layout { grid-template-columns: 1fr; }
 
   /* On mobile, SYSTEM panel spans full width as a compact row */
-  .disk-system-panel {
+  .system-panel, .disk-system-panel {
     grid-column: 1 / -1;
     order: -1;
   }

@@ -578,7 +578,6 @@ export default function DiskPage() {
             <button className="btn" onClick={() => simResult && doSimStep(simResult, revealed)} disabled={done}>STEP</button>
             <button className={`btn ${autoRunning ? 'btn-yellow' : 'btn-pink'}`} onClick={toggleDiskAuto} disabled={done}>{autoRunning ? 'STOP AUTO' : 'AUTO RUN'}</button>
             <button className="btn btn-sm" onClick={() => startSim(algorithm)}>RESTART</button>
-            <button className="btn btn-sm" style={{ borderColor: 'var(--pink)', color: 'var(--pink)' }} onClick={() => router.push('/?topic=true')}>← EXIT</button>
 
             <div className="rule-box" style={{ marginTop: 8 }}>
               <span>ALGORITHM INFO</span>
@@ -598,7 +597,7 @@ export default function DiskPage() {
         <GameHeader moduleName="DISK SCHEDULING" algorithmLabel={getDiskAlgoLabel(algorithm)} modeLabel="PLAY MODE" onExit={() => router.push('/?topic=true')} />
         <main className="play-layout">
           {/* SYSTEM panel — horizontal row on mobile */}
-          <section className="panel disk-system-panel">
+          <section className="panel system-panel">
             <h2 style={{ fontSize: 14 }}>SYSTEM</h2>
             <div className="stat-row">
               <div className="stat-block"><span>HEARTS</span><HeartDisplay hearts={hearts} maxHearts={MAX_HEARTS} /></div>
@@ -708,7 +707,6 @@ export default function DiskPage() {
               <>
                 <button className="btn" onClick={() => startPlay(algorithm)}>PLAY AGAIN</button>
                 <button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← MENU</button>
-                <button className="btn btn-sm" style={{ borderColor: 'var(--pink)', color: 'var(--pink)' }} onClick={() => router.push('/?topic=true')}>← EXIT</button>
               </>
             )}
           </section>

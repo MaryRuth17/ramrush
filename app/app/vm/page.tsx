@@ -500,7 +500,7 @@ export default function VmPage() {
               </div>
             )}
           </section>
-          <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <section className="panel sim-control-panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <h2 style={{ fontSize: 14 }}>SIM CONTROL</h2>
             <button className="btn" onClick={() => simResult && doSimStep(simResult, simStep)} disabled={done}>STEP</button>
             <button className={`btn ${autoRunning ? 'btn-yellow' : 'btn-pink'}`} onClick={toggleVmAuto} disabled={done}>{autoRunning ? 'STOP AUTO' : 'AUTO RUN'}</button>
@@ -521,13 +521,15 @@ export default function VmPage() {
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
         <GameHeader moduleName="VIRTUAL MEMORY" algorithmLabel={getVmAlgoLabel(algorithm)} modeLabel="PLAY MODE" onExit={() => router.push('/?topic=true')} />
         <main className="play-layout">
-          <section className="panel">
+          <section className="panel system-panel">
             <h2 style={{ fontSize: 14 }}>SYSTEM</h2>
-            <div className="stat-block"><span>HEARTS</span><HeartDisplay hearts={hearts} maxHearts={MAX_HEARTS} /></div>
-            <div className="stat-block"><span>SCORE</span><strong>{score}</strong></div>
-            <div className="stat-block"><span>FAULTS</span><strong>{playFaults}</strong></div>
-            <div className="stat-block"><span>HITS</span><strong>{playHits}</strong></div>
-            <div className="stat-block"><span>INDEX</span><strong>{playIndex}/{playRef.length}</strong></div>
+            <div className="stat-row">
+              <div className="stat-block"><span>HEARTS</span><HeartDisplay hearts={hearts} maxHearts={MAX_HEARTS} /></div>
+              <div className="stat-block"><span>SCORE</span><strong>{score}</strong></div>
+              <div className="stat-block"><span>FAULTS</span><strong>{playFaults}</strong></div>
+              <div className="stat-block"><span>HITS</span><strong>{playHits}</strong></div>
+              <div className="stat-block"><span>INDEX</span><strong>{playIndex}/{playRef.length}</strong></div>
+            </div>
           </section>
 
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -539,19 +541,16 @@ export default function VmPage() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {playRef.map((p, i) => {
                   let cls = 'ref-cell';
-                  let customStyle: React.CSSProperties = {};
                   if (i < playLog.length) {
                     const status = playLog[i];
                     if (status === 'hit' || status === 'auto') {
                       cls += ' hit';
-                      customStyle = { borderColor: 'var(--success)', color: 'var(--success)' };
                     } else if (status === 'fault') {
                       cls += ' fault';
-                      customStyle = { borderColor: 'var(--danger)', color: 'var(--danger)' };
                     }
                   }
                   if (i === playIndex) cls += ' current';
-                  return <div key={i} className={cls} style={customStyle}>{p}</div>;
+                  return <div key={i} className={cls}>{p}</div>;
                 })}
               </div>
             </div>
