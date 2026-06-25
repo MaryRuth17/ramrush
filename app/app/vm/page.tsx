@@ -358,13 +358,15 @@ export default function VmPage() {
       <div style={{ maxWidth: 700, width: '100%', padding: 24 }}>
         <h1 className="font-pixel" style={{ color: 'var(--yellow)', textAlign: 'center', fontSize: 'clamp(18px,3vw,32px)', marginBottom: 32 }}>VIRTUAL MEMORY</h1>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px,1fr))', gap: 18, marginBottom: 24 }}>
-          <button id="vmPlayMode" className="topic-card cyan-card" onClick={() => { setMode('play'); setScreen('stageSelect'); }}>
-            <span className="topic-icon">▶</span><strong className="topic-title">PLAY</strong>
-            <small className="topic-desc">Timed — click the correct victim frame to evict</small>
+          <button id="vmPlayMode" className="topic-card-pixel" onClick={() => { setMode('play'); setScreen('stageSelect'); }}
+            style={{ backgroundImage: "url('/assets/topic_select_blue.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}>
+            <div className="topic-card-content"><span className="topic-icon">▶</span><strong className="topic-title">PLAY</strong>
+            <small className="topic-desc">Timed — click the correct victim frame to evict</small></div>
           </button>
-          <button id="vmSimMode" className="topic-card pink-card" onClick={() => { setMode('simulation'); setScreen('algoSelect'); }}>
-            <span className="topic-icon">⚙</span><strong className="topic-title">SIMULATION</strong>
-            <small className="topic-desc">Step-by-step page replacement visualiser</small>
+          <button id="vmSimMode" className="topic-card-pixel" onClick={() => { setMode('simulation'); setScreen('algoSelect'); }}
+            style={{ backgroundImage: "url('/assets/topic_select_red.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}>
+            <div className="topic-card-content"><span className="topic-icon">⚙</span><strong className="topic-title">SIMULATION</strong>
+            <small className="topic-desc">Step-by-step page replacement visualiser</small></div>
           </button>
         </div>
         <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← BACK</button></div>
@@ -472,15 +474,15 @@ export default function VmPage() {
               <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>FRAMES</h2>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${activeFrames()}, 1fr)`, gap: 10 }}>
                 {currentFrames.map((page, i) => (
-                  <div key={i} className={`memory-block vm-frame ${page === null ? 'empty' : 'filled'}`} style={{ cursor: 'default' }}>
-                    <strong>FRAME {i + 1}</strong>
-                    <span>{page === null ? 'EMPTY' : `PAGE ${page}`}</span>
+                  <div key={i} className={`memory-block vm-frame ${page === null ? 'empty' : 'filled'}`} style={{ cursor: 'default', position: 'relative' }}>
+                    <span className="mem-label label-title">FRAME {i + 1}</span>
+                    <span className="mem-label label-size">{page === null ? 'EMPTY' : `PAGE ${page}`}</span>
                   </div>
                 ))}
               </div>
             </div>
             {done && (
-              <div style={{ border: '2px solid var(--border)', padding: 12 }}>
+              <div className="results-panel-bg" style={{ border: '2px solid var(--border)' }}>
                 <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>RESULTS</h2>
                 <table className="results-table">
                   <thead><tr><th>Total Refs</th><th>Page Faults</th><th>Hits</th><th>Hit Ratio</th><th>Fault Ratio</th></tr></thead>
@@ -498,7 +500,7 @@ export default function VmPage() {
               </div>
             )}
           </section>
-          <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <section className="panel sim-control-panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <h2 style={{ fontSize: 14 }}>SIM CONTROL</h2>
             <button className="btn" onClick={() => simResult && doSimStep(simResult, simStep)} disabled={done}>STEP</button>
             <button className={`btn ${autoRunning ? 'btn-yellow' : 'btn-pink'}`} onClick={toggleVmAuto} disabled={done}>{autoRunning ? 'STOP AUTO' : 'AUTO RUN'}</button>
@@ -519,41 +521,37 @@ export default function VmPage() {
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
         <GameHeader moduleName="VIRTUAL MEMORY" algorithmLabel={getVmAlgoLabel(algorithm)} modeLabel="PLAY MODE" onExit={() => router.push('/?topic=true')} />
         <main className="play-layout">
-          <section className="panel">
+          <section className="panel system-panel">
             <h2 style={{ fontSize: 14 }}>SYSTEM</h2>
-            <div className="stat-block"><span>HEARTS</span><HeartDisplay hearts={hearts} maxHearts={MAX_HEARTS} /></div>
-            <div className="stat-block"><span>SCORE</span><strong>{score}</strong></div>
-            <div className="stat-block"><span>FAULTS</span><strong>{playFaults}</strong></div>
-            <div className="stat-block"><span>HITS</span><strong>{playHits}</strong></div>
-            <div className="stat-block"><span>INDEX</span><strong>{playIndex}/{playRef.length}</strong></div>
+            <div className="stat-row">
+              <div className="stat-block"><span>HEARTS</span><HeartDisplay hearts={hearts} maxHearts={MAX_HEARTS} /></div>
+              <div className="stat-block"><span>SCORE</span><strong>{score}</strong></div>
+              <div className="stat-block"><span>FAULTS</span><strong>{playFaults}</strong></div>
+              <div className="stat-block"><span>HITS</span><strong>{playHits}</strong></div>
+              <div className="stat-block"><span>INDEX</span><strong>{playIndex}/{playRef.length}</strong></div>
+            </div>
           </section>
 
           <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {!playDone && needsChoice && (
-              <TimerBar key={timerKey} seconds={TIMER_BY_DIFFICULTY[stage]} running={timerRunning} onExpire={handlePlayTimeout} />
+            {!playDone && (
+              <TimerBar key={timerKey} seconds={TIMER_BY_DIFFICULTY[stage]} running={timerRunning && needsChoice} onExpire={handlePlayTimeout} />
             )}
             <div style={{ border: '2px solid var(--border)', padding: 12 }}>
               <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>REFERENCE STRING</h2>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {playRef.map((p, i) => {
                   let cls = 'ref-cell';
-                  let customStyle: React.CSSProperties = {};
                   if (i < playLog.length) {
                     const status = playLog[i];
                     if (status === 'hit' || status === 'auto') {
                       cls += ' hit';
-                      customStyle = { borderColor: 'var(--success)', color: 'var(--success)' };
                     } else if (status === 'fault') {
                       cls += ' fault';
-                      customStyle = { borderColor: 'var(--danger)', color: 'var(--danger)' };
                     }
                   }
                   if (i === playIndex) cls += ' current';
-                  return <div key={i} className={cls} style={customStyle}>{p}</div>;
+                  return <div key={i} className={cls}>{p}</div>;
                 })}
-              </div>
-              <div style={{ fontSize: 10, color: 'var(--yellow)', marginTop: 8 }}>
-                DEBUG playLog: {JSON.stringify(playLog)}
               </div>
             </div>
             <div style={{ border: '2px solid var(--border)', padding: 12 }}>
@@ -572,13 +570,14 @@ export default function VmPage() {
                       onClick={() => handleFrameClick(i)}
                       disabled={!needsChoice || playDone}
                       style={{
+                        position: 'relative',
                         cursor: needsChoice && !playDone ? 'pointer' : 'default',
                         border: needsChoice ? '3px solid var(--yellow)' : undefined,
                         outline: isRight ? '4px solid var(--success)' : isWrong ? '4px solid var(--danger)' : undefined,
                       }}
                     >
-                      <strong>FRAME {i + 1}</strong>
-                      <span>{page === null ? 'EMPTY' : `PAGE ${page}`}</span>
+                      <span className="mem-label label-title">FRAME {i + 1}</span>
+                      <span className="mem-label label-size">{page === null ? 'EMPTY' : `PAGE ${page}`}</span>
                     </button>
                   );
                 })}

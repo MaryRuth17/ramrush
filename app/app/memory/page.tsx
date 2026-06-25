@@ -2,7 +2,7 @@
 
 // app/memory/page.tsx — Memory Allocation topic page (Play + Simulation + Custom Input)
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TimerBar } from '@/components/ui/TimerBar';
 import { HeartDisplay } from '@/components/ui/HeartDisplay';
@@ -111,6 +111,8 @@ export default function MemoryPage() {
   const [useCompaction, setUseCompaction] = useState(false);
 
   // Simulation state
+  const autoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [autoRunning, setAutoRunning] = useState(false);
   const [simBlocks, setSimBlocks] = useState<MemoryBlock[]>([]);
   const [simProcesses, setSimProcesses] = useState<MemoryProcess[]>([]);
   const [simStep, setSimStep] = useState(0);
@@ -119,6 +121,54 @@ export default function MemoryPage() {
   const [breakdown, setBreakdown] = useState<BreakdownStep[]>([]);
   const [processed, setProcessed] = useState<MemoryProcess[]>([]);
   const [unprocessed, setUnprocessed] = useState<Array<MemoryProcess & { reason: string }>>([]);
+
+  const simStateRef = useRef({
+    blocks: simBlocks,
+    step: simStep,
+    history: simHistory,
+    processed: processed,
+    unprocessed: unprocessed,
+    algorithm: algorithm,
+    processes: simProcesses
+  });
+
+  useEffect(() => {
+    simStateRef.current = {
+      blocks: simBlocks,
+      step: simStep,
+      history: simHistory,
+      processed: processed,
+      unprocessed: unprocessed,
+      algorithm: algorithm,
+      processes: simProcesses
+    };
+  }, [simBlocks, simStep, simHistory, processed, unprocessed, algorithm, simProcesses]);
+
+  useEffect(() => {
+    return () => {
+      if (autoIntervalRef.current) clearInterval(autoIntervalRef.current);
+    };
+  }, []);
+
+  function toggleMemoryAuto() {
+    if (autoRunning) {
+      setAutoRunning(false);
+      if (autoIntervalRef.current) { clearInterval(autoIntervalRef.current); autoIntervalRef.current = null; }
+      return;
+    }
+    setAutoRunning(true);
+    const id = setInterval(() => {
+      const { algorithm: curAlgo, blocks: curBlocks, processes: curProcs, step: curStep, history: curHistory, processed: curProc, unprocessed: curUnproc } = simStateRef.current;
+      if (curStep >= curProcs.length) {
+        clearInterval(id);
+        autoIntervalRef.current = null;
+        setAutoRunning(false);
+        return;
+      }
+      doSimStep(curAlgo, curBlocks, curProcs, curStep, curHistory, curProc, curUnproc);
+    }, 700);
+    autoIntervalRef.current = id;
+  }
 
   // Play state
   const [playBlocks, setPlayBlocks] = useState<MemoryBlock[]>([]);
@@ -143,6 +193,7 @@ export default function MemoryPage() {
 
   /* ── SIMULATION ───────────────────────────────────────────── */
   function startSimulation(algo: MemoryAlgorithm) {
+    if (autoIntervalRef.current) { clearInterval(autoIntervalRef.current); autoIntervalRef.current = null; }
     setAlgorithm(algo);
     const randomIdx = Math.floor(Math.random() * 3);
     setSelectedSetIdx(randomIdx);
@@ -154,6 +205,7 @@ export default function MemoryPage() {
     setBreakdown([]);
     setProcessed([]);
     setUnprocessed([]);
+    setAutoRunning(false);
     setSimMessage(`${getAlgorithmLabel(algo)}: Press STEP to allocate the next process.`);
     setScreen('simulation');
   }
@@ -171,6 +223,8 @@ export default function MemoryPage() {
       setSimMessage('All processes processed. See breakdown below.');
       const bd = generateMemoryBreakdown(algo, blocks, history);
       setBreakdown(bd);
+      setAutoRunning(false);
+      if (autoIntervalRef.current) { clearInterval(autoIntervalRef.current); autoIntervalRef.current = null; }
       return;
     }
     const process = processes[step];
@@ -229,6 +283,8 @@ export default function MemoryPage() {
       const bd = generateMemoryBreakdown(algo, allocated, newHistory);
       setBreakdown(bd);
       setSimMessage(`${getAlgorithmLabel(algo)} complete! ${newProc.length} processes allocated.`);
+      setAutoRunning(false);
+      if (autoIntervalRef.current) { clearInterval(autoIntervalRef.current); autoIntervalRef.current = null; }
     }
   }
 
@@ -397,13 +453,15 @@ export default function MemoryPage() {
       <div style={{ maxWidth: 700, width: '100%', padding: 24 }}>
         <h1 className="font-pixel" style={{ color: 'var(--yellow)', textAlign: 'center', fontSize: 'clamp(18px,3vw,32px)', marginBottom: 32 }}>MEMORY ALLOCATION</h1>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px,1fr))', gap: 18, marginBottom: 24 }}>
-          <button id="memPlayMode" className="topic-card cyan-card" onClick={() => { setMode('play'); setScreen('stageSelect'); }}>
-            <span className="topic-icon">▶</span><strong className="topic-title">PLAY</strong>
-            <small className="topic-desc">Timed challenge — click the correct memory block</small>
+          <button id="memPlayMode" className="topic-card-pixel" onClick={() => { setMode('play'); setScreen('stageSelect'); }}
+            style={{ backgroundImage: "url('/assets/topic_select_blue.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}>
+            <div className="topic-card-content"><span className="topic-icon">▶</span><strong className="topic-title">PLAY</strong>
+            <small className="topic-desc">Timed challenge — click the correct memory block</small></div>
           </button>
-          <button id="memSimMode" className="topic-card pink-card" onClick={() => { setMode('simulation'); setScreen('algoSelect'); }}>
-            <span className="topic-icon">⚙</span><strong className="topic-title">SIMULATION</strong>
-            <small className="topic-desc">Step-by-step memory allocation visualiser</small>
+          <button id="memSimMode" className="topic-card-pixel" onClick={() => { setMode('simulation'); setScreen('algoSelect'); }}
+            style={{ backgroundImage: "url('/assets/topic_select_red.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}>
+            <div className="topic-card-content"><span className="topic-icon">⚙</span><strong className="topic-title">SIMULATION</strong>
+            <small className="topic-desc">Step-by-step memory allocation visualiser</small></div>
           </button>
         </div>
         <div style={{ textAlign: 'center' }}><button className="btn btn-sm" onClick={() => router.push('/?topic=true')}>← BACK</button></div>
@@ -541,9 +599,9 @@ export default function MemoryPage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10 }}>
                 {simBlocks.map((b, i) => (
                   <div key={i} className={`memory-block ${b.used ? 'used' : 'free'}`} style={{ cursor: 'default' }}>
-                    <strong style={{ display: 'block' }}>BLOCK {i + 1}</strong>
-                    <span style={{ display: 'block', marginTop: 4 }}>{b.size} MB</span>
-                    {b.used && <span style={{ display: 'block', fontSize: 11, marginTop: 2 }}>{b.processName}</span>}
+                    <span className="mem-label label-title">BLOCK {i + 1}</span>
+                    <span className="mem-label label-size">{b.size} MB</span>
+                    {b.used && <span className="mem-label label-proc">{b.processName}</span>}
                   </div>
                 ))}
               </div>
@@ -564,7 +622,7 @@ export default function MemoryPage() {
             </div>
 
             {(processed.length > 0 || unprocessed.length > 0) && (
-              <div style={{ border: '2px solid var(--border)', padding: 12 }}>
+              <div className="results-panel-bg" style={{ border: '2px solid var(--border)' }}>
                 <h2 style={{ fontSize: 14, color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12 }}>RESULTS</h2>
                 {processed.length > 0 && (
                   <div style={{ marginBottom: 8 }}>
@@ -581,7 +639,7 @@ export default function MemoryPage() {
             )}
           </section>
 
-          <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <section className="panel sim-control-panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <h2 style={{ fontSize: 14 }}>SIM CONTROL</h2>
             <button
               className="btn"
@@ -590,9 +648,16 @@ export default function MemoryPage() {
             >
               STEP
             </button>
+            <button
+              className={`btn ${autoRunning ? 'btn-yellow' : 'btn-pink'}`}
+              disabled={done}
+              onClick={toggleMemoryAuto}
+            >
+              {autoRunning ? 'STOP AUTO' : 'AUTO RUN'}
+            </button>
             <button className="btn btn-sm" onClick={() => startSimulation(algorithm)}>RESTART</button>
             <div className="rule-box">
-              <span>RULE</span>
+              <span>ALGORITHM INFO</span>
               <JustifiedText style={{ fontSize: 12, marginTop: 4 }}>{getAlgorithmRule(algorithm)}</JustifiedText>
             </div>
             <div className="message-box" style={{ fontSize: 12 }}>{simMessage}</div>
@@ -606,14 +671,16 @@ export default function MemoryPage() {
     const correctIdx = currentProcess ? findTargetBlock(playBlocks, currentProcess, algorithm) : -1;
     return (
       <div style={{ minHeight: '100vh', background: 'var(--dark)', padding: 'clamp(10px,2vw,20px)' }}>
-        <GameHeader moduleName="MEMORY ALLOCATION" algorithmLabel={getAlgorithmLabel(algorithm)} modeLabel={`PLAY (${stage.toUpperCase()})`} onExit={() => router.push('/?topic=true')} exitButtonId="memPlayExit" />
+        <GameHeader moduleName="MEMORY ALLOCATION" algorithmLabel={getAlgorithmLabel(algorithm)} modeLabel="PLAY MODE" onExit={() => router.push('/?topic=true')} exitButtonId="memPlayExit" />
         <main className="play-layout">
           {/* Left: status */}
-          <section className="panel">
+          <section className="panel system-panel">
             <h2 style={{ fontSize: 14 }}>SYSTEM</h2>
-            <div className="stat-block"><span>HEARTS</span><HeartDisplay hearts={hearts} maxHearts={MAX_HEARTS} /></div>
-            <div className="stat-block"><span>SCORE</span><strong>{score}</strong></div>
-            <div className="stat-block"><span>REMAINING</span><strong>{playQueue.length + (currentProcess ? 1 : 0)}</strong></div>
+            <div className="stat-row">
+              <div className="stat-block"><span>HEARTS</span><HeartDisplay hearts={hearts} maxHearts={MAX_HEARTS} /></div>
+              <div className="stat-block"><span>SCORE</span><strong>{score}</strong></div>
+              <div className="stat-block"><span>DONE</span><strong>{playProcesses.length - playQueue.length - (currentProcess ? 1 : 0)}/{playProcesses.length}</strong></div>
+            </div>
           </section>
 
           {/* Center: timer + memory blocks */}
@@ -655,9 +722,9 @@ export default function MemoryPage() {
                         cursor: b.used || playDone ? 'default' : 'pointer',
                       }}
                     >
-                      <strong style={{ display: 'block', fontSize: 13 }}>BLOCK {i + 1}</strong>
-                      <span style={{ display: 'block', marginTop: 4 }}>{b.size} MB</span>
-                      {b.used && <span style={{ display: 'block', fontSize: 10, marginTop: 2 }}>{b.processName}</span>}
+                      <span className="mem-label label-title">BLOCK {i + 1}</span>
+                      <span className="mem-label label-size">{b.size} MB</span>
+                      {b.used && <span className="mem-label label-proc">{b.processName}</span>}
                     </button>
                   );
                 })}

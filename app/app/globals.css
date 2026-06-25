@@ -45,6 +45,29 @@ body {
     radial-gradient(ellipse at 80% 20%, rgba(255,42,109,0.04) 0%, transparent 50%);
 }
 
+/* ── CUSTOM PIXEL CURSOR (applied globally so inline styles can't override) ── */
+*, *::before, *::after, *:hover, *:active, *:focus {
+  cursor: url('/ui/cursor.png') 4 4, auto !important;
+}
+a, button, [role="button"], select,
+label, input[type="checkbox"], input[type="radio"],
+.topic-card, .topic-card-pixel, .algo-card, .memory-block,
+.queue-card, .gantt-block, .disk-mark-block,
+a *, button *, [role="button"] *, select *,
+label *, input[type="checkbox"] *, input[type="radio"] *,
+.topic-card *, .topic-card-pixel *, .algo-card *, .memory-block *,
+.queue-card *, .gantt-block *, .disk-mark-block *,
+a:hover, button:hover, [role="button"]:hover, select:hover, label:hover,
+a:active, button:active, [role="button"]:active, select:active, label:active,
+a:focus, button:focus, [role="button"]:focus, select:focus, label:focus {
+  cursor: url('/ui/cursor.png') 4 4, pointer !important;
+}
+input[type="text"], input[type="number"], textarea,
+input[type="text"] *, input[type="number"] *, textarea * {
+  cursor: url('/ui/cursor.png') 4 4, text !important;
+}
+
+
 /* ── SCANLINE OVERLAY ────────────────────────────────────── */
 .scanlines {
   pointer-events: none;
@@ -71,7 +94,36 @@ body {
 .font-pixel { font-family: var(--font-pixel); }
 .font-mono  { font-family: var(--font-mono); }
 
-/* ── CYBERDECK SHELL (opening screen) ───────────────────── */
+/* ── OPENING SCREEN (start_screen.png CRT frame) ─────────── */
+.opening-screen-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.crt-frame {
+  position: relative;
+  width: min(96vw, 860px);
+  /* start_screen.png is the drawn pixel-art cyberdeck casing */
+  background-image: url('/assets/start_screen.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  /*
+    Padding insets content into the screen area of the frame.
+    The image has side columns ~13% each and top/bottom bars ~12% each.
+    So: pad top/bottom 13%, left/right 15% to stay inside the screen.
+  */
+  padding: 14% 16% 10%;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+}
+
+/* Keep old .cyberdeck-shell for any other possible references */
 .cyberdeck-shell {
   width: min(96vw, 860px);
   border: 4px solid var(--border);
@@ -154,22 +206,84 @@ body {
   letter-spacing: 1px;
 }
 
-/* ── MEMORY BLOCKS ───────────────────────────────────────── */
+/* ── MEMORY BLOCKS ───────────────────────────────────────────────── */
 .memory-block {
+  position: relative;
   min-height: 110px;
-  border: 3px solid var(--white);
-  padding: 10px;
+  padding: 8px;
   text-align: center;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  cursor: pointer;
+  align-items: center;
+  gap: 4px;
+  cursor: url('/ui/cursor.png') 4 4, pointer !important;
   transition: outline 0.1s, transform 0.15s;
+  overflow: hidden;
+  border: 3px solid var(--border);
+}
+.memory-block:hover { outline: 4px solid var(--yellow); transform: scale(1.02); }
+
+/* free block — tiled cyan tile as background decoration */
+.memory-block.free {
+  background-image: url('/ui/free_block.png');
+  background-size: 32px 32px;
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  border-color: var(--cyan);
+}
+/* used block — tiled pink tile as background decoration */
+.memory-block.used {
+  background-image: url('/ui/used_block.png');
+  background-size: 32px 32px;
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  border-color: var(--pink);
+  cursor: default !important;
 }
 
-.memory-block:hover { outline: 4px solid var(--yellow); transform: scale(1.02); }
-.memory-block.free  { background: var(--cyan); color: var(--dark); }
-.memory-block.used  { background: var(--pink); color: var(--white); cursor: default; }
+/*
+  .mem-label — a dark pill placed OVER the tile so text is always readable.
+  Use this inside every memory-block instead of bare <strong>/<span>.
+*/
+.mem-label {
+  display: block;
+  background: rgba(5, 8, 22, 0.88);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 2px;
+  padding: 3px 6px;
+  margin: 1px 0;
+  color: var(--white);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.3;
+  width: 100%;
+}
+.mem-label.label-title { color: var(--cyan); font-weight: bold; font-size: 11px; }
+.mem-label.label-size  { color: var(--yellow); font-size: 13px; font-weight: bold; }
+.mem-label.label-proc  { color: var(--pink); font-size: 10px; }
+
+/* VM frame variant */
+.memory-block.vm-frame.empty {
+  background: var(--terminal-black);
+  border-color: var(--border);
+}
+.memory-block.vm-frame.filled {
+  background-image: url('/ui/used_block.png');
+  background-size: 32px 32px;
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  border-color: var(--cyan);
+}
+.memory-block.vm-frame.filled::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 8, 22, 0.50);
+  z-index: 1;
+  pointer-events: none;
+}
+
 .memory-block.correct-flash { outline: 6px solid var(--success); }
 .memory-block.wrong-flash   { outline: 6px solid var(--danger); }
 
@@ -184,7 +298,15 @@ body {
 
 .queue-card.active-queue-card { border-color: var(--yellow); background: #17213c; }
 
-/* ── TIMER BAR ───────────────────────────────────────────── */
+/* ── TIMER WIDGET (timer countdown box, no drawn-asset background) ─── */
+.timer-widget {
+  border: 2px solid var(--cyan);
+  background: var(--panel-dark);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+/* ── TIMER BAR ─────────────────────────────────────────────────── */
 .timer-bar-shell {
   width: 100%;
   height: 14px;
@@ -209,15 +331,53 @@ body {
 .stat-block strong { display: block; color: var(--yellow); font-size: 20px; margin-top: 4px; }
 #heartDisplay { color: var(--pink); letter-spacing: 4px; }
 
-/* ── RULE / MESSAGE BOXES ────────────────────────────────── */
-.rule-box, .message-box {
-  border: 2px solid var(--cyan);
-  background: var(--terminal-black);
-  padding: 12px;
+/* ── STAT ROW (horizontal stats strip for mobile) ────────── */
+.stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.stat-row .stat-block {
+  flex: 1 1 auto;
+  margin-bottom: 0;
+  min-width: 70px;
+}
+.stat-row .stat-block strong { font-size: 16px; }
+
+/* ── RULE / MESSAGE BOXES ───────────────────────────────────── */
+/* Solid dark background — NO background-image (keeps text 100% readable) */
+.rule-box {
+  border-left: 4px solid var(--cyan);
+  border-top: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: #0d1530;
+  padding: 10px 12px;
   margin-bottom: 12px;
 }
-.rule-box span { color: var(--yellow); font-weight: bold; display: block; margin-bottom: 6px; }
-.rule-box p, .message-box { color: var(--white); line-height: 1.5; }
+.rule-box span  { color: var(--yellow); font-weight: bold; display: block; margin-bottom: 6px; font-size: 11px; letter-spacing: 1px; }
+.rule-box p     { color: var(--white); line-height: 1.6; font-size: 12px; }
+
+.message-box {
+  border-left: 4px solid var(--pink);
+  border-top: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: #0d1530;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  color: var(--white);
+  line-height: 1.6;
+  font-size: 12px;
+}
+
+/* ── RESULTS PANEL ────────────────────────────────────────── */
+.results-panel-bg {
+  background: #0d1530;
+  border: 2px solid var(--yellow);
+  border-left: 4px solid var(--yellow);
+  padding: 18px;
+}
 
 /* ── RESULTS TABLE ───────────────────────────────────────── */
 .results-table {
@@ -276,31 +436,60 @@ body {
 /* ── DISK TRACK ──────────────────────────────────────────── */
 .disk-line {
   position: relative;
-  height: 80px;
+  height: 160px;
   border: 2px solid var(--border);
   background: var(--terminal-black);
   margin-top: 10px;
   overflow: hidden;
 }
-.disk-mark {
+.disk-mark-block {
   position: absolute;
-  top: 22px;
-  width: 2px;
-  height: calc(100% - 22px);
-  background: var(--violet);
-  cursor: pointer;
-  transition: background 0.2s;
+  width: 32px;
+  height: 48px;
+  border: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  image-rendering: pixelated;
+  transition: transform 0.15s, border-color 0.15s;
+  z-index: 6;
 }
-.disk-mark span {
-  position: absolute;
-  top: -22px;
-  left: -12px;
-  font-size: 11px;
-  color: var(--white);
-  white-space: nowrap;
+.disk-mark-block.free {
+  background-image: url('/ui/free_block.png');
+  background-size: 32px 32px;
+  background-repeat: repeat;
+  border-color: var(--cyan);
 }
-.disk-mark.visited { background: var(--success); }
-.disk-mark.clickable:hover { background: var(--yellow); }
+.disk-mark-block.used {
+  background-image: url('/ui/used_block.png');
+  background-size: 32px 32px;
+  background-repeat: repeat;
+  border-color: var(--pink);
+}
+.disk-mark-block.visited {
+  border-color: var(--success);
+}
+.disk-mark-block.current-head {
+  border-color: var(--yellow);
+  box-shadow: 0 0 10px var(--yellow);
+  z-index: 8;
+}
+.disk-mark-block.start-pos {
+  border-color: var(--yellow);
+}
+.disk-mark-block .mem-label {
+  padding: 1px 3px;
+  font-size: 9px;
+  text-align: center;
+  width: auto;
+  min-width: 82%;
+  margin: 1px 0;
+}
+.stagger-level-0 { top: 6px; }
+.stagger-level-1 { top: 56px; }
+.stagger-level-2 { top: 106px; }
+
 .disk-head {
   position: absolute;
   top: 0;
@@ -309,6 +498,7 @@ body {
   background: var(--pink);
   transition: left 0.45s linear;
   box-shadow: 0 0 8px var(--pink);
+  z-index: 5;
 }
 
 /* ── MATH BREAKDOWN PANEL ────────────────────────────────── */
@@ -465,7 +655,7 @@ body {
   background: var(--panel-dark);
   border: 3px solid var(--border);
   text-align: center;
-  cursor: pointer;
+  cursor: url('/ui/cursor.png') 4 4, pointer;
   transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
 }
 .topic-card:hover {
@@ -476,6 +666,37 @@ body {
 .topic-card.cyan-card:hover { border-color: var(--cyan); box-shadow: 0 8px 30px rgba(5,217,232,0.25); }
 .topic-card.pink-card { border-color: var(--pink); }
 .topic-card.pink-card:hover { border-color: var(--pink); box-shadow: 0 8px 30px rgba(255,42,109,0.25); }
+
+/* Pixel-art topic card using drawn topic_select images */
+.topic-card-pixel {
+  position: relative;
+  min-height: 170px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  text-align: center;
+  cursor: url('/ui/cursor.png') 4 4, pointer;
+  transition: transform 0.15s, filter 0.2s;
+  overflow: hidden;
+  image-rendering: pixelated;
+}
+.topic-card-pixel:hover {
+  transform: translateY(-4px) scale(1.02);
+  filter: brightness(1.12) drop-shadow(0 6px 18px rgba(5,217,232,0.35));
+}
+.topic-card-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 170px;
+  padding: 20px 14px;
+  /* semi-transparent overlay so text reads over the drawn card image */
+  background: rgba(5, 8, 22, 0.45);
+}
 
 .topic-icon { display: block; font-size: 44px; color: var(--cyan); margin-bottom: 14px; }
 .topic-title { display: block; color: var(--yellow); font-size: 20px; font-weight: bold; margin-bottom: 10px; }
@@ -493,7 +714,7 @@ body {
 }
 .algo-card:hover { border-color: var(--cyan); transform: translateY(-2px); }
 .algo-card strong { display: block; color: var(--yellow); font-size: 20px; margin-bottom: 10px; }
-.algo-card small  { color: var(--white); font-size: 13px; line-height: 1.5; }
+.algo-card small  { color: var(--white); font-size: 13px; line-height: 1.5; word-break: break-word; overflow-wrap: break-word; }
 
 /* ── HEART DISPLAY ───────────────────────────────────────── */
 @keyframes heart-lose {
@@ -544,13 +765,34 @@ body {
 /* ── RESPONSIVE ──────────────────────────────────────────── */
 @media (max-width: 1050px) {
   .play-layout, .simulation-layout { grid-template-columns: 1fr; }
+
+  /* On mobile, SYSTEM panel spans full width as a compact row */
+  .system-panel, .disk-system-panel {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+
+  /* On mobile, SIM CONTROL sidebar moves to top of the main column */
+  .sim-control-panel {
+    order: -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .sim-control-panel h2 { width: 100%; }
+  .sim-control-panel .btn { flex: 1 1 auto; }
 }
 @media (max-width: 720px) {
   .game-header { flex-direction: column; text-align: center; }
 }
 @media (max-width: 600px) {
   .topic-grid { grid-template-columns: 1fr !important; }
+  /* Algo cards: reduce font so desc text doesn't overlap */
+  .algo-card small { font-size: 11px; }
 }
 @media (max-width: 480px) {
   .topic-card, .algo-card { min-height: auto; padding: 16px; }
+  /* Tighten stat row values on very small screens */
+  .stat-row .stat-block strong { font-size: 14px; }
 }

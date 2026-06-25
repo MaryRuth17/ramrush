@@ -51,8 +51,8 @@ export function TimerBar({ seconds, running, onExpire, onTick }: TimerBarProps) 
   const display = Math.max(0, Math.ceil(remaining));
 
   return (
-    <div className="rule-box" style={{ marginBottom: 0 }}>
-      <span>TIME TO DECIDE</span>
+    <div className="timer-widget" style={{ marginBottom: 0 }}>
+      <span style={{ display: 'block', color: 'var(--yellow)', fontWeight: 'bold', marginBottom: 6 }}>TIME TO DECIDE</span>
       <strong style={{ display: 'block', color: 'var(--pink)', fontSize: 'clamp(26px,4vw,42px)', textAlign: 'center' }}>
         {display}
       </strong>

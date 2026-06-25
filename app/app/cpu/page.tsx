@@ -557,15 +557,21 @@ function ModeSelect({ onBack, onSelectMode }: { onBack: () => void; onSelectMode
           CPU SCHEDULING
         </h1>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 18, marginBottom: 24 }}>
-          <button id="cpuPlayMode" className="topic-card cyan-card" onClick={() => onSelectMode('play')}>
-            <span className="topic-icon">▶</span>
-            <strong className="topic-title">PLAY</strong>
-            <small className="topic-desc">Timed challenge — click the correct next process</small>
+          <button id="cpuPlayMode" className="topic-card-pixel" onClick={() => onSelectMode('play')}
+            style={{ backgroundImage: "url('/assets/topic_select_blue.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}>
+            <div className="topic-card-content">
+              <span className="topic-icon">▶</span>
+              <strong className="topic-title">PLAY</strong>
+              <small className="topic-desc">Timed challenge — click the correct next process</small>
+            </div>
           </button>
-          <button id="cpuSimMode" className="topic-card pink-card" onClick={() => onSelectMode('simulation')}>
-            <span className="topic-icon">⚙</span>
-            <strong className="topic-title">SIMULATION</strong>
-            <small className="topic-desc">Step-by-step Gantt chart visualiser</small>
+          <button id="cpuSimMode" className="topic-card-pixel" onClick={() => onSelectMode('simulation')}
+            style={{ backgroundImage: "url('/assets/topic_select_red.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}>
+            <div className="topic-card-content">
+              <span className="topic-icon">⚙</span>
+              <strong className="topic-title">SIMULATION</strong>
+              <small className="topic-desc">Step-by-step Gantt chart visualiser</small>
+            </div>
           </button>
         </div>
         <div style={{ textAlign: 'center' }}>
@@ -742,11 +748,10 @@ function SimulationScreen({
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px,1fr))', gap: 10 }}>
               {processes.map(p => (
-                <div key={p.name} className="queue-card">
-                  <strong style={{ color: 'var(--pink)', display: 'block', marginBottom: 4 }}>{p.name}</strong>
-                  <span style={{ color: 'var(--white)', fontSize: 12, display: 'block' }}>Arrival: {p.arrival}</span>
-                  <span style={{ color: 'var(--white)', fontSize: 12, display: 'block' }}>Burst: {p.burst}</span>
-                  <span style={{ color: 'var(--white)', fontSize: 12, display: 'block' }}>Priority: {p.priority}</span>
+                <div key={p.name} className="memory-block free" style={{ cursor: 'default' }}>
+                  <span className="mem-label label-title">{p.name}</span>
+                  <span className="mem-label label-size">Burst: {p.burst}</span>
+                  <span className="mem-label label-proc">Arr: {p.arrival} | Pri: {p.priority}</span>
                 </div>
               ))}
             </div>
@@ -759,11 +764,16 @@ function SimulationScreen({
             </h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {revealed === 0
-                ? <div className="gantt-block"><strong>—</strong><span>No slices yet</span></div>
+                ? (
+                  <div className="memory-block empty" style={{ cursor: 'default', minWidth: 90, minHeight: 'auto', padding: 6, background: 'var(--terminal-black)', borderColor: 'var(--border)' }}>
+                    <span className="mem-label label-title">—</span>
+                    <span className="mem-label label-size" style={{ fontSize: 10 }}>No slices yet</span>
+                  </div>
+                )
                 : gantt.slice(0, revealed).map((b, i) => (
-                    <div key={i} className="gantt-block">
-                      <strong>{b.name}</strong>
-                      <span>{b.start} → {b.end}</span>
+                    <div key={i} className="memory-block used" style={{ cursor: 'default', minWidth: 90, minHeight: 'auto', padding: 6 }}>
+                      <span className="mem-label label-title">{b.name}</span>
+                      <span className="mem-label label-size" style={{ fontSize: 10 }}>{b.start} → {b.end}</span>
                     </div>
                   ))}
             </div>
@@ -771,7 +781,7 @@ function SimulationScreen({
 
           {/* Results + Breakdown */}
           {stats && (
-            <div style={{ border: '2px solid var(--border)', padding: 12, background: 'rgba(255,255,255,0.03)' }}>
+            <div className="results-panel-bg" style={{ border: '2px solid var(--border)' }}>
               <h2 style={{ color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12, fontSize: 14 }}>
                 RESULTS
               </h2>
@@ -802,7 +812,7 @@ function SimulationScreen({
         </section>
 
         {/* Control panel */}
-        <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <section className="panel sim-control-panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h2 style={{ fontSize: 14 }}>SIM CONTROL</h2>
           <button id="cpuStepButton" className="btn" onClick={onStep} disabled={revealed >= gantt.length}>STEP</button>
           <button id="cpuAutoButton" className={`btn ${autoRunning ? 'btn-yellow' : 'btn-pink'}`} onClick={onToggleAuto} disabled={revealed >= gantt.length}>
@@ -851,23 +861,25 @@ function PlayScreen({
 
       <main className="play-layout">
         {/* Left: status */}
-        <section className="panel">
+        <section className="panel system-panel">
           <h2 style={{ fontSize: 14 }}>SYSTEM</h2>
-          <div className="stat-block">
-            <span>HEARTS</span>
-            <HeartDisplay hearts={hearts} maxHearts={MAX_HEARTS} />
-          </div>
-          <div className="stat-block">
-            <span>SCORE</span>
-            <strong>{score}</strong>
-          </div>
-          <div className="stat-block">
-            <span>TIME</span>
-            <strong>{currentTime}</strong>
-          </div>
-          <div className="stat-block">
-            <span>SCHEDULED</span>
-            <strong>{completedNames.length}/{processes.length}</strong>
+          <div className="stat-row">
+            <div className="stat-block">
+              <span>HEARTS</span>
+              <HeartDisplay hearts={hearts} maxHearts={MAX_HEARTS} />
+            </div>
+            <div className="stat-block">
+              <span>SCORE</span>
+              <strong>{score}</strong>
+            </div>
+            <div className="stat-block">
+              <span>TIME</span>
+              <strong>{currentTime}</strong>
+            </div>
+            <div className="stat-block">
+              <span>DONE</span>
+              <strong>{completedNames.length}/{processes.length}</strong>
+            </div>
           </div>
         </section>
 
@@ -908,39 +920,27 @@ function PlayScreen({
                     id={`cpu-play-${p.name}`}
                     onClick={() => !playDone && isArrived && onProcessClick(p.name)}
                     disabled={playDone || !isArrived}
+                    className={`memory-block ${isDone ? 'used' : 'free'} ${isCorrect ? 'correct-flash' : isWrong ? 'wrong-flash' : ''}`}
                     style={{
-                      border: isDone
-                        ? '2px solid #333'
-                        : isCorrect
-                        ? '3px solid var(--success)'
+                      outline: isCorrect
+                        ? '4px solid var(--success)'
                         : isWrong
-                        ? '3px solid var(--danger)'
+                        ? '4px solid var(--danger)'
                         : isArrived
-                        ? '3px solid var(--cyan)'
-                        : '2px solid var(--border)',
-                      background: isDone
-                        ? '#0a0f1a'
-                        : isArrived
-                        ? 'rgba(5,217,232,0.1)'
-                        : 'var(--terminal-black)',
-                      padding: 10,
+                        ? '3px solid var(--yellow)'
+                        : undefined,
                       cursor: isArrived && !playDone ? 'pointer' : 'default',
-                      transition: 'all 0.15s',
-                      textAlign: 'center',
-                      opacity: isDone ? 0.4 : p.arrival > currentTime ? 0.6 : 1,
-                      fontFamily: 'var(--font-mono)',
-                      color: 'var(--white)',
-                      position: 'relative',
+                      opacity: isDone ? 0.5 : p.arrival > currentTime ? 0.6 : 1,
+                      padding: 8,
                     }}
-                    className={isCorrect ? 'correct-flash' : isWrong ? 'wrong-flash' : ''}
                   >
-                    <strong style={{ display: 'block', color: isDone ? '#666' : 'var(--yellow)', fontSize: 16 }}>{p.name}</strong>
-                    <span style={{ fontSize: 11, display: 'block' }}>
-                      Arr: {p.arrival} | {rrRemaining ? `Rem: ${displayBurst}` : `Burst: ${p.burst}`}
+                    <span className="mem-label label-title" style={{ color: isDone ? '#888' : 'var(--cyan)' }}>{p.name}</span>
+                    <span className="mem-label label-size">
+                      {rrRemaining ? `Rem: ${displayBurst}` : `Burst: ${p.burst}`}
                     </span>
-                    <span style={{ fontSize: 11, display: 'block' }}>Pri: {p.priority}</span>
-                    {isDone && <span style={{ fontSize: 10, color: 'var(--success)' }}>✓ DONE</span>}
-                    {p.arrival > currentTime && <span style={{ fontSize: 10, color: '#7a8ab0' }}>arrives@{p.arrival}</span>}
+                    <span className="mem-label label-proc">
+                      {isDone ? '✓ DONE' : p.arrival > currentTime ? `arrives@${p.arrival}` : `Arr: ${p.arrival} | Pri: ${p.priority}`}
+                    </span>
                   </button>
                 );
               })}
