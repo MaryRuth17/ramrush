@@ -1,7 +1,5 @@
 'use client';
 
-// app/cpu/page.tsx — CPU Scheduling topic page (Play + Simulation + Custom Input)
-
 import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { TimerBar } from '@/components/ui/TimerBar';
@@ -116,12 +114,10 @@ export default function CpuPage() {
   const [algorithm, setAlgorithm] = useState<CpuAlgorithm>('fcfs');
   const [stage, setStage] = useState<'easy' | 'normal' | 'hard'>('normal');
 
-  // Custom process input
   const [customProcesses, setCustomProcesses] = useState<CpuProcess[]>(DEFAULT_PROCESSES_COPY);
   const [quantum, setQuantum] = useState(DEFAULT_CPU_QUANTUM);
   const [useCustom, setUseCustom] = useState(false);
 
-  // Simulation state
   const autoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [gantt, setGantt] = useState<GanttBlock[]>([]);
   const [stats, setStats] = useState<CpuStats | null>(null);
@@ -131,7 +127,6 @@ export default function CpuPage() {
   const [breakdown, setBreakdown] = useState<BreakdownStep[]>([]);
   const [algoInfo, setAlgoInfo] = useState('');
 
-  // Play state
   const [playProcesses, setPlayProcesses] = useState<CpuProcess[]>([]);
   const [completedNames, setCompletedNames] = useState<string[]>([]);
   const [currentTime, setCurrentTime] = useState(0);
@@ -145,7 +140,6 @@ export default function CpuPage() {
   const [flashWrong, setFlashWrong] = useState<string | null>(null);
   const [playStarted, setPlayStarted] = useState(false);
 
-  // RR-specific play state: remaining burst per process, ordered ready queue, and admission tracker
   const [rrRemaining, setRrRemaining] = useState<Record<string, number>>({});
   const [rrQueue, setRrQueue] = useState<string[]>([]);
   const [rrAdded, setRrAdded] = useState<Set<string>>(new Set());
@@ -154,7 +148,6 @@ export default function CpuPage() {
     return customProcesses.length > 0 && useCustom ? customProcesses : DEFAULT_PROCESSES_COPY;
   }, [customProcesses, useCustom]);
 
-  /* ── SIMULATION MODE ──────────────────────────────────────── */
   function startSimulation(algo: CpuAlgorithm) {
     if (autoIntervalRef.current) { clearInterval(autoIntervalRef.current); autoIntervalRef.current = null; }
     setAlgorithm(algo);
@@ -224,7 +217,6 @@ export default function CpuPage() {
     autoIntervalRef.current = id;
   }
 
-  /* ── PLAY MODE ────────────────────────────────────────────── */
   function startPlay(algo: CpuAlgorithm) {
     setAlgorithm(algo);
     const sets = CPU_SETS[stage];
@@ -442,7 +434,6 @@ export default function CpuPage() {
     } catch { /* silent */ }
   }
 
-  /* ── RENDER ───────────────────────────────────────────────── */
   if (screen === 'modeSelect') {
     return <ModeSelect onBack={() => router.push('/?topic=true')} onSelectMode={(m) => { setMode(m); setScreen(m === 'play' ? 'stageSelect' : 'algoSelect'); }} />;
   }
@@ -547,8 +538,6 @@ export default function CpuPage() {
   return null;
 }
 
-/* ─────────────────── SUB-COMPONENTS ────────────────────────── */
-
 function ModeSelect({ onBack, onSelectMode }: { onBack: () => void; onSelectMode: (m: 'play' | 'simulation') => void }) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dark)' }}>
@@ -627,7 +616,6 @@ function AlgoSelect({
           {mode === 'play' ? 'Choose an algorithm to challenge yourself.' : 'Choose an algorithm to simulate.'}
         </p>
 
-        {/* Custom Input Form */}
         <details className="input-form-wrapper" style={{ marginBottom: 20 }}>
           <summary>CUSTOM PROCESS INPUT (optional override)</summary>
           <div style={{ marginTop: 14 }}>
@@ -739,9 +727,7 @@ function SimulationScreen({
       <GameHeader moduleName="CPU SCHEDULING" algorithmLabel={getCpuAlgoLabel(algorithm)} modeLabel="SIMULATION" onExit={onExit} exitButtonId="cpuExitButton" />
 
       <main className="simulation-layout">
-        {/* Center panel */}
         <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* Process table */}
           <div style={{ border: '2px solid var(--border)', padding: 12, background: 'rgba(255,255,255,0.03)' }}>
             <h2 style={{ color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12, fontSize: 14 }}>
               PROCESS TABLE
@@ -757,7 +743,6 @@ function SimulationScreen({
             </div>
           </div>
 
-          {/* Gantt chart */}
           <div style={{ border: '2px solid var(--border)', padding: 12, background: 'rgba(255,255,255,0.03)' }}>
             <h2 style={{ color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12, fontSize: 14 }}>
               GANTT CHART
@@ -779,7 +764,6 @@ function SimulationScreen({
             </div>
           </div>
 
-          {/* Results + Breakdown */}
           {stats && (
             <div className="results-panel-bg" style={{ border: '2px solid var(--border)' }}>
               <h2 style={{ color: 'var(--cyan)', borderBottom: '2px solid var(--pink)', paddingBottom: 8, marginBottom: 12, fontSize: 14 }}>
@@ -811,7 +795,6 @@ function SimulationScreen({
           )}
         </section>
 
-        {/* Control panel */}
         <section className="panel sim-control-panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h2 style={{ fontSize: 14 }}>SIM CONTROL</h2>
           <button id="cpuStepButton" className="btn" onClick={onStep} disabled={revealed >= gantt.length}>STEP</button>
@@ -860,7 +843,6 @@ function PlayScreen({
       <GameHeader moduleName="CPU SCHEDULING" algorithmLabel={getCpuAlgoLabel(algorithm)} modeLabel="PLAY MODE" onExit={onExit} exitButtonId="cpuExitPlay" />
 
       <main className="play-layout">
-        {/* Left: status */}
         <section className="panel system-panel">
           <h2 style={{ fontSize: 14 }}>SYSTEM</h2>
           <div className="stat-row">
@@ -883,7 +865,6 @@ function PlayScreen({
           </div>
         </section>
 
-        {/* Center: timer + process cards */}
         <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {!playDone && (
             <TimerBar key={timerKey} seconds={timerSeconds} running={timerRunning} onExpire={onTimeout} />
@@ -894,7 +875,6 @@ function PlayScreen({
               ALL PROCESSES
             </h2>
 
-            {/* RR queue order display */}
             {rrQueue && rrQueue.length > 0 && (
               <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', padding: '5px 10px', marginBottom: 10, fontSize: 11 }}>
                 <span style={{ color: 'var(--yellow)' }}>QUEUE: </span>
@@ -948,7 +928,6 @@ function PlayScreen({
           </div>
         </section>
 
-        {/* Right: controls */}
         <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h2 style={{ fontSize: 14 }}>CONTROL</h2>
           <div className="rule-box">

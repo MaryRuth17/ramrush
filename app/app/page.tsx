@@ -1,7 +1,5 @@
 'use client';
 
-// app/page.tsx — Opening screen + Topic Select (client component)
-
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -61,15 +59,12 @@ export default function HomePage() {
   );
 }
 
-/* ── OPENING SCREEN ──────────────────────────────────────────────────── */
 function OpeningScreen({ onStart }: { onStart: () => void }) {
   return (
     <div className="opening-screen-wrapper">
-      {/* Pixel-art CRT frame — the start_screen.png drawn asset */}
       <div className="crt-frame">
         <div className="scanline-layer" />
 
-        {/* Boot text */}
         <div className="boot-text" style={{ position: 'relative', zIndex: 2 }}>
           {BOOT_LINES.map((line, i) => (
             <p key={i} className={i === BOOT_LINES.length - 1 ? 'ready-text' : ''}>
@@ -78,7 +73,6 @@ function OpeningScreen({ onStart }: { onStart: () => void }) {
           ))}
         </div>
 
-        {/* Logo image replaces the plain text title */}
         <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', margin: '28px auto 16px', display: 'flex', justifyContent: 'center' }}>
           <img
             src="/icons/logo.png"
@@ -90,7 +84,6 @@ function OpeningScreen({ onStart }: { onStart: () => void }) {
           OS ALGORITHMS CHALLENGE — v12
         </p>
 
-        {/* Start button */}
         <div style={{ position: 'relative', zIndex: 2, textAlign: 'center' }}>
           <button
             id="startButton"
@@ -106,7 +99,6 @@ function OpeningScreen({ onStart }: { onStart: () => void }) {
   );
 }
 
-/* ── TOPIC SELECT SCREEN ────────────────────────────────────────────── */
 const TOPICS = [
   {
     id: 'memory',

@@ -1,6 +1,3 @@
-// services/memory.service.ts — Memory Allocation DB service (isolated)
-// Only imports from lib/prisma and lib/memory. Never touches CPU/VM/Disk tables.
-
 import { prisma } from '@/lib/prisma';
 import type { MemoryAlgorithm, StageType } from '@/lib/memory/types';
 

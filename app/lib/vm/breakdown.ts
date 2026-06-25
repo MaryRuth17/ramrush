@@ -1,5 +1,3 @@
-// lib/vm/breakdown.ts — Step-by-step math breakdown for Virtual Memory
-
 import type { VmAlgorithm, VmSimResult } from './types';
 import { getVmAlgoLabel } from './algorithms';
 

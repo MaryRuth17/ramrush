@@ -1,7 +1,5 @@
 'use client';
 
-// app/vm/page.tsx — Virtual Memory topic page (Play + Simulation + Custom Input)
-
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { TimerBar } from '@/components/ui/TimerBar';

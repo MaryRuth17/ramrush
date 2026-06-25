@@ -1,5 +1,3 @@
-// lib/game/constants.ts — Shared game constants for all modules
-
 export const MAX_HEARTS = 3;
 
 export const TIMER_BY_DIFFICULTY = {

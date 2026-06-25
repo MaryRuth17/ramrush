@@ -1,6 +1,3 @@
-// services/cpu.service.ts — CPU Scheduling DB service (isolated)
-// Only imports from lib/prisma and lib/cpu. Never touches Memory/VM/Disk tables.
-
 import { prisma } from '@/lib/prisma';
 import type { CpuAlgorithm, CpuProcess } from '@/lib/cpu/types';
 

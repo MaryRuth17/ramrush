@@ -1,6 +1,3 @@
-// lib/prisma.ts — Singleton Prisma client (shared across all services)
-// Uses better-sqlite3 adapter for local SQLite. No cloud DB.
-
 import { PrismaClient } from '../generated/prisma';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import path from 'node:path';

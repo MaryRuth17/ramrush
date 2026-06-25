@@ -1,5 +1,3 @@
-// lib/disk/algorithms.ts — Disk Scheduling isolated algorithm logic
-
 import type { DiskAlgorithm, DiskSimResult } from './types';
 
 export const DEFAULT_DISK_REQUESTS = [98, 183, 37, 122, 14, 124, 65, 67];

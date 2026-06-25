@@ -1,7 +1,5 @@
 'use client';
 
-// app/disk/page.tsx — Disk Scheduling topic page (Play + Simulation + Custom Input)
-
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { TimerBar } from '@/components/ui/TimerBar';

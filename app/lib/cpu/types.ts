@@ -1,5 +1,3 @@
-// lib/cpu/types.ts — CPU Scheduling isolated types
-
 export type CpuAlgorithm = 'fcfs' | 'sjf' | 'priority' | 'rr';
 
 export interface CpuProcess {

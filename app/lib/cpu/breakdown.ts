@@ -1,5 +1,3 @@
-// lib/cpu/breakdown.ts — Step-by-step math breakdown for CPU Scheduling
-
 import type { CpuAlgorithm, CpuProcess, GanttBlock, CpuStats } from './types';
 import { getCpuAlgoLabel } from './algorithms';
 

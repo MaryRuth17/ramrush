@@ -1,7 +1,5 @@
 'use client';
 
-// app/memory/page.tsx — Memory Allocation topic page (Play + Simulation + Custom Input)
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TimerBar } from '@/components/ui/TimerBar';

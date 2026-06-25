@@ -1,5 +1,3 @@
-// lib/memory/algorithms.ts — Memory Allocation isolated algorithm logic
-
 import type { MemoryBlock, MemoryProcess, MemoryAlgorithm } from './types';
 
 export function cloneBlocks(blocks: MemoryBlock[]): MemoryBlock[] {

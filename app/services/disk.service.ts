@@ -1,6 +1,3 @@
-// services/disk.service.ts — Disk Scheduling DB service (isolated)
-// Only imports from lib/prisma and lib/disk. Never touches Memory/CPU/VM tables.
-
 import { prisma } from '@/lib/prisma';
 import type { DiskAlgorithm } from '@/lib/disk/types';
 

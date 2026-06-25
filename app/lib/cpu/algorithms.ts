@@ -1,5 +1,3 @@
-// lib/cpu/algorithms.ts — CPU Scheduling isolated algorithm logic
-
 import type { CpuAlgorithm, CpuProcess, GanttBlock, CpuStats, CpuStatRow } from './types';
 
 export const DEFAULT_CPU_PROCESSES: CpuProcess[] = [
