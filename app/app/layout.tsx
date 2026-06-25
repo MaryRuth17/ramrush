@@ -1,5 +1,3 @@
-// app/layout.tsx — Root layout for RAM Rush Next.js app
-
 import type { Metadata } from 'next';
 import './globals.css';
 

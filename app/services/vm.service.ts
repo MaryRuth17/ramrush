@@ -1,6 +1,3 @@
-// services/vm.service.ts — Virtual Memory DB service (isolated)
-// Only imports from lib/prisma and lib/vm. Never touches Memory/CPU/Disk tables.
-
 import { prisma } from '@/lib/prisma';
 import type { VmAlgorithm } from '@/lib/vm/types';
 

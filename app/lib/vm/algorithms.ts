@@ -1,5 +1,3 @@
-// lib/vm/algorithms.ts — Virtual Memory isolated algorithm logic
-
 import type { VmAlgorithm, VmStepState, VmSimResult } from './types';
 
 export const DEFAULT_VM_REFERENCE_STRING = [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1];

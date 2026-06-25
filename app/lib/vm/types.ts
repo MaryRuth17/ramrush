@@ -1,5 +1,3 @@
-// lib/vm/types.ts — Virtual Memory isolated types
-
 export type VmAlgorithm = 'fifo' | 'lru' | 'optimal';
 
 export type VmLogEntry = 'hit' | 'fault';

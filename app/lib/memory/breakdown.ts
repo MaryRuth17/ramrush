@@ -1,5 +1,3 @@
-// lib/memory/breakdown.ts — Step-by-step math breakdown for Memory Allocation
-
 import type { MemoryBlock, MemoryProcess, MemoryAlgorithm } from './types';
 import { getAlgorithmLabel } from './algorithms';
 

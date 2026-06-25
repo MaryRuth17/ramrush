@@ -1,5 +1,3 @@
-// lib/disk/breakdown.ts — Step-by-step math breakdown for Disk Scheduling
-
 import type { DiskAlgorithm, DiskSimResult } from './types';
 import { getDiskAlgoLabel } from './algorithms';
 

@@ -1,5 +1,3 @@
-// lib/memory/types.ts — Memory Allocation isolated types
-
 export type MemoryAlgorithm = 'firstFit' | 'bestFit' | 'worstFit';
 export type StageType = 'easy' | 'normal' | 'hard';
 
